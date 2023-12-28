@@ -14,5 +14,8 @@
             "email": "michaelbudd6@gmail.com"
         }
     ],
-    "require": {}
+    "require": {
+        "symfony/http-client": "^6.3",
+        "illuminate/collections": "^10.39"
+    }
 }

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace PearTreeWeb\MicroManager\Client\Domain\Model;
 
-final class Checkpoint
+final readonly class Checkpoint implements IsInteger
 {
-
+    use FulfilIsInteger;
 }

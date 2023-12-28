@@ -10,9 +10,15 @@ trait FulfilIsString
 
     public static function create(?string $value): self
     {
+        self::validate($value);
+
         return $value
             ? new self($value)
             : new self(IsString::NULL_REPRESENTATION);
+    }
+
+    private static function validate(?string $value): void
+    {
     }
 
     public static function fromString(string $value): self
@@ -23,5 +29,10 @@ trait FulfilIsString
     public function toString(): string
     {
         return $this->value;
+    }
+
+    public function __toString(): string
+    {
+        return $this->toString();
     }
 }
