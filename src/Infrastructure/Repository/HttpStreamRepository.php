@@ -21,7 +21,7 @@ final readonly class HttpStreamRepository implements StreamRepository
             sprintf('http://127.0.0.1:8000/%s/stream', $id)
         );
 
-        $events = json_decode($response->getContent(), true)['events'];
+        $events = json_decode($response->getContent(), true, 512, JSON_THROW_ON_ERROR)['events'];
 
         foreach ($events as &$event) {
             $event['properties'] = self::keyPropertiesByName($event['properties']);
@@ -32,13 +32,21 @@ final readonly class HttpStreamRepository implements StreamRepository
 
     public function save(Stream $aggregate): void
     {
-        // TODO: Implement save() method.
+        foreach ($aggregate->events as $event) {
+            $this->httpClient->request(
+                'POST',
+                sprintf('http://127.0.0.1:8000/%s/stream', $aggregate->id->toString()),
+                [
+                    'body' => $event,
+                ]
+            );
+        }
     }
 
     private static function keyPropertiesByName(array $events): array
     {
         return collect($events)
-            ->keyBy('name')
+            ->keyBy('event')
             ->all();
     }
 }
