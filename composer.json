@@ -1,6 +1,6 @@
 {
-    "name": "peartreeweb/micro-manager-client",
-    "description": "A PHP library to interact with MicroManager service",
+    "name": "peartreeweb/event-sourcerer-client",
+    "description": "A PHP library to interact with Event Sourcerer",
     "type": "library",
     "license": "proprietary",
     "autoload": {
@@ -15,7 +15,9 @@
         }
     ],
     "require": {
-        "symfony/http-client": "^6.3",
-        "illuminate/collections": "^10.39"
+        "symfony/http-client": "7.0.*",
+        "illuminate/collections": "^10.39",
+        "revolt/event-loop": "^1.0",
+        "amphp/websocket-client": "^2.0"
     }
 }

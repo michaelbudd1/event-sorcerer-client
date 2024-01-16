@@ -6,5 +6,9 @@ namespace PearTreeWeb\MicroManager\Client\Domain\Model;
 
 final readonly class Stream
 {
-    public function __construct(public StreamId $id, public array $events) {}
+    public function __construct(
+        public StreamId $id,
+        public StreamName $name,
+        public array $events
+    ) {}
 }
