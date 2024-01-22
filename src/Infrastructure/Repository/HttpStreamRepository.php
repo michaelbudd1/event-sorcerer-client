@@ -7,6 +7,7 @@ namespace PearTreeWeb\MicroManager\Client\Infrastructure\Repository;
 use PearTreeWeb\MicroManager\Client\Domain\Model\Checkpoint;
 use PearTreeWeb\MicroManager\Client\Domain\Model\Stream;
 use PearTreeWeb\MicroManager\Client\Domain\Model\StreamId;
+use PearTreeWeb\MicroManager\Client\Domain\Model\StreamName;
 use PearTreeWeb\MicroManager\Client\Domain\Repository\StreamRepository;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
@@ -21,13 +22,13 @@ final readonly class HttpStreamRepository implements StreamRepository
             sprintf('http://127.0.0.1:8000/%s/stream', $id)
         );
 
-        $events = json_decode($response->getContent(), true, 512, JSON_THROW_ON_ERROR)['events'];
+        $stream = json_decode($response->getContent(), true, 512, JSON_THROW_ON_ERROR);
 
-        foreach ($events as &$event) {
+        foreach ($stream['events'] as &$event) {
             $event['properties'] = self::keyPropertiesByName($event['properties']);
         }
 
-        return new Stream($id, $events);
+        return new Stream($id, StreamName::fromString($stream['stream']), $stream['events']);
     }
 
     public function save(Stream $aggregate): void
@@ -37,7 +38,10 @@ final readonly class HttpStreamRepository implements StreamRepository
                 'POST',
                 sprintf('http://127.0.0.1:8000/%s/stream', $aggregate->id->toString()),
                 [
-                    'body' => $event,
+                    'body' => [
+                        'event'      => $event,
+                        'streamName' => $aggregate->name->toString(),
+                    ],
                 ]
             );
         }
