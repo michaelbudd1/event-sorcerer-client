@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace PearTreeWeb\MicroManager\Client\Domain\Repository;
+namespace PearTreeWeb\EventSourcerer\Client\Domain\Repository;
 
-use PearTreeWeb\MicroManager\Client\Domain\Model\Checkpoint;
-use PearTreeWeb\MicroManager\Client\Domain\Model\Stream;
-use PearTreeWeb\MicroManager\Client\Domain\Model\StreamId;
+use PearTreeWeb\EventSourcerer\Client\Domain\Model\Checkpoint;
+use PearTreeWeb\EventSourcerer\Client\Domain\Model\Stream;
+use PearTreeWeb\EventSourcerer\Client\Domain\Model\StreamId;
 
 interface StreamRepository
 {

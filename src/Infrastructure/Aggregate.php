@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace PearTreeWeb\MicroManager\Client\Infrastructure;
+namespace PearTreeWeb\EventSourcerer\Client\Infrastructure;
 
-use PearTreeWeb\MicroManager\Client\Domain\Aggregate as AggregateInterface;
-use PearTreeWeb\MicroManager\Client\Infrastructure\Attribute\EventProperty;
+use PearTreeWeb\EventSourcerer\Client\Domain\Aggregate as AggregateInterface;
+use PearTreeWeb\EventSourcerer\Client\Infrastructure\Attribute\EventProperty;
 use ReflectionClass;
 
 abstract readonly class Aggregate implements AggregateInterface

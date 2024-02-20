@@ -2,25 +2,30 @@
 
 declare(strict_types=1);
 
-namespace PearTreeWeb\MicroManager\Client\Infrastructure\Repository;
+namespace PearTreeWeb\EventSourcerer\Client\Infrastructure\Repository;
 
-use PearTreeWeb\MicroManager\Client\Domain\Model\Checkpoint;
-use PearTreeWeb\MicroManager\Client\Domain\Model\Stream;
-use PearTreeWeb\MicroManager\Client\Domain\Model\StreamId;
-use PearTreeWeb\MicroManager\Client\Domain\Model\StreamName;
-use PearTreeWeb\MicroManager\Client\Domain\Repository\StreamRepository;
+use PearTreeWeb\EventSourcerer\Client\Domain\Model\Checkpoint;
+use PearTreeWeb\EventSourcerer\Client\Domain\Model\Stream;
+use PearTreeWeb\EventSourcerer\Client\Domain\Model\StreamId;
+use PearTreeWeb\EventSourcerer\Client\Domain\Model\StreamName;
+use PearTreeWeb\EventSourcerer\Client\Domain\Repository\StreamRepository;
+use PearTreeWeb\EventSourcerer\Client\Exception\CouldNotStoreEventException;
+use PearTreeWeb\EventSourcerer\Client\Infrastructure\Config;
+use Symfony\Component\HttpClient\Exception\ClientException;
+use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
+use Symfony\Contracts\HttpClient\ResponseInterface;
 
 final readonly class HttpStreamRepository implements StreamRepository
 {
-    public function __construct(private HttpClientInterface $httpClient) {}
+    public function __construct(
+        private HttpClientInterface $httpClient,
+        private Config $config
+    ) {}
 
     public function get(StreamId $id, Checkpoint $checkpoint): Stream
     {
-        $response = $this->httpClient->request(
-            'GET',
-            sprintf('http://127.0.0.1:8000/%s/stream', $id)
-        );
+        $response = $this->httpClient->request('GET', $this->url($id->toString()));
 
         $stream = json_decode($response->getContent(), true, 512, JSON_THROW_ON_ERROR);
 
@@ -34,17 +39,21 @@ final readonly class HttpStreamRepository implements StreamRepository
     public function save(Stream $aggregate): void
     {
         foreach ($aggregate->events as $event) {
-            $this->httpClient->request(
-                'POST',
-                sprintf('http://127.0.0.1:8000/%s/stream', $aggregate->id->toString()),
-                [
-                    'body' => [
-                        'event'      => $event,
-                        'streamName' => $aggregate->name->toString(),
-                    ],
-                ]
-            );
+            try {
+                $response = $this->saveEvent($aggregate, $event);
+
+                if (500 === $response->getStatusCode()) {
+                    self::handleError($response->getContent(), $event);
+                }
+            } catch (TransportExceptionInterface|ClientException $e) {
+                self::handleError($e->getResponse()->getContent(), $event);
+            }
         }
+    }
+
+    public static function handleError(string $error, array $event): void
+    {
+        throw CouldNotStoreEventException::with($error, $event);
     }
 
     private static function keyPropertiesByName(array $events): array
@@ -52,5 +61,28 @@ final readonly class HttpStreamRepository implements StreamRepository
         return collect($events)
             ->keyBy('event')
             ->all();
+    }
+
+    private function saveEvent(Stream $aggregate, mixed $event): ResponseInterface
+    {
+        return $this->httpClient->request(
+            'POST',
+            $this->url($aggregate->id->toString()),
+            [
+                'body' => \array_merge($event, [
+                    'streamName' => $aggregate->name->toString(),
+                ]),
+            ]
+        );
+    }
+
+    private function url(string $aggregateId): string
+    {
+        return sprintf(
+            '%s:%s/%s/stream',
+            $this->config->serverUrl,
+            $this->config->serverPort,
+            $aggregateId
+        );
     }
 }

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace PearTreeWeb\MicroManager\Client\Domain\Model;
+namespace PearTreeWeb\EventSourcerer\Client\Domain\Model;
 
 interface IsString
 {

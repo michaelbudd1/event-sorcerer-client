@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace PearTreeWeb\MicroManager\Client\Infrastructure\Service;
+namespace PearTreeWeb\EventSourcerer\Client\Infrastructure\Service;
 
 final readonly class InstantiateEventFromArray
 {

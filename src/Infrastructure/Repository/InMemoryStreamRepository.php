@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace PearTreeWeb\MicroManager\Client\Infrastructure\Repository;
+namespace PearTreeWeb\EventSourcerer\Client\Infrastructure\Repository;
 
-use PearTreeWeb\MicroManager\Client\Domain\Model\Checkpoint;
-use PearTreeWeb\MicroManager\Client\Domain\Model\Stream;
-use PearTreeWeb\MicroManager\Client\Domain\Model\StreamId;
-use PearTreeWeb\MicroManager\Client\Domain\Repository\StreamRepository;
+use PearTreeWeb\EventSourcerer\Client\Domain\Model\Checkpoint;
+use PearTreeWeb\EventSourcerer\Client\Domain\Model\Stream;
+use PearTreeWeb\EventSourcerer\Client\Domain\Model\StreamId;
+use PearTreeWeb\EventSourcerer\Client\Domain\Repository\StreamRepository;
 
 final class InMemoryStreamRepository implements StreamRepository
 {

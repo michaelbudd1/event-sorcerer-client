@@ -1,6 +1,6 @@
 <?php
 
-namespace PearTreeWeb\MicroManager\Client\Domain\Repository;
+namespace PearTreeWeb\EventSourcerer\Client\Domain\Repository;
 
 interface RealTimeRepository
 {

@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace PearTreeWeb\MicroManager\Client\Infrastructure\Repository;
+namespace PearTreeWeb\EventSourcerer\Client\Infrastructure\Repository;
 
 use Amp\Websocket\Client\WebsocketConnection;
-use PearTreeWeb\MicroManager\Client\Domain\Repository\RealTimeRepository;
+use PearTreeWeb\EventSourcerer\Client\Domain\Repository\RealTimeRepository;
 use function Amp\Websocket\Client\connect;
 
 final readonly class WebSocketRepository implements RealTimeRepository
