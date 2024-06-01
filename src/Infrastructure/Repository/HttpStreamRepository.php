@@ -25,7 +25,7 @@ final readonly class HttpStreamRepository implements StreamRepository
 
     public function get(StreamId $id, Checkpoint $checkpoint): Stream
     {
-        $response = $this->httpClient->request('GET', $this->url($id->toString()));
+        $response = $this->httpClient->request('GET', $this->url($id));
 
         $stream = json_decode($response->getContent(), true, 512, JSON_THROW_ON_ERROR);
 
@@ -42,7 +42,7 @@ final readonly class HttpStreamRepository implements StreamRepository
             try {
                 $response = $this->saveEvent($aggregate, $event);
 
-                if (500 === $response->getStatusCode()) {
+                if (201 !== $response->getStatusCode()) {
                     self::handleError($response->getContent(), $event);
                 }
             } catch (TransportExceptionInterface|ClientException $e) {
@@ -67,22 +67,29 @@ final readonly class HttpStreamRepository implements StreamRepository
     {
         return $this->httpClient->request(
             'POST',
-            $this->url($aggregate->id->toString()),
+            $this->url(),
             [
-                'body' => \array_merge($event, [
+                'json' => [
+                    'event'      => $event['event'],
+                    'properties' => $event,
+                    'streamId'   => $aggregate->id->toString(),
                     'streamName' => $aggregate->name->toString(),
-                ]),
+                ],
             ]
         );
     }
 
-    private function url(string $aggregateId): string
+    private function url(?StreamId $id = null): string
     {
+        $appendId = $id
+            ? '?streamId=' . $id->toString()
+            : '';
+
         return sprintf(
-            '%s:%s/%s/stream',
+            '%s:%s/api/stream_events%s',
             $this->config->serverUrl,
             $this->config->serverPort,
-            $aggregateId
+            $appendId
         );
     }
 }
