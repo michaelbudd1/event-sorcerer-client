@@ -23,17 +23,16 @@ final readonly class HttpStreamRepository implements StreamRepository
         private Config $config
     ) {}
 
-    public function get(StreamId $id, Checkpoint $checkpoint): Stream
+    public function get(StreamName $name, StreamId $id, Checkpoint $checkpoint): Stream
     {
         $response = $this->httpClient->request('GET', $this->url($id));
+        $events   = json_decode($response->getContent(), true, 512, JSON_THROW_ON_ERROR);
 
-        $stream = json_decode($response->getContent(), true, 512, JSON_THROW_ON_ERROR);
-
-        foreach ($stream['events'] as &$event) {
+        foreach ($events as &$event) {
             $event['properties'] = self::keyPropertiesByName($event['properties']);
         }
 
-        return new Stream($id, StreamName::fromString($stream['stream']), $stream['events']);
+        return new Stream($id, $name, $events);
     }
 
     public function save(Stream $aggregate): void
