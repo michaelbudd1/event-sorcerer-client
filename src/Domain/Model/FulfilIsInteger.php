@@ -11,13 +11,18 @@ trait FulfilIsInteger
         return new self($value);
     }
 
+    public static function zero(): self
+    {
+        return new self(0);
+    }
+
     public function toInt(): int
     {
         return $this->value;
     }
 
-    public static function zero(): self
+    public function increment(): self
     {
-        return new self(0);
+        return new self($this->value + 1);
     }
 }

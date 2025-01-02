@@ -18,6 +18,6 @@
         "symfony/http-client": "7.0.*",
         "illuminate/collections": "^10.39",
         "revolt/event-loop": "^1.0",
-        "amphp/websocket-client": "^2.0"
+        "react/socket": "^1.15"
     }
 }
