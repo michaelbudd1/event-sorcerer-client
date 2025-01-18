@@ -17,7 +17,7 @@ trait FulfilIsString
             : new self(IsString::NULL_REPRESENTATION);
     }
 
-    private static function validate(?string $value): void
+    protected static function validate(?string $value): void
     {
     }
 
