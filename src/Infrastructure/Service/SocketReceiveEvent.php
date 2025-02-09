@@ -6,19 +6,22 @@ namespace PearTreeWeb\EventSourcerer\Client\Infrastructure\Service;
 
 use PearTreeWeb\EventSourcerer\Client\Domain\Model\Checkpoint;
 use PearTreeWeb\EventSourcerer\Client\Domain\Model\StreamId;
-use PearTreeWeb\EventSourcerer\Client\Domain\Service\AcknowledgeEvent;
-use PearTreeWeb\EventSourcerer\Client\Domain\Service\CatchupHandler as CatchupHandlerInterface;
+use PearTreeWeb\EventSourcerer\Client\Domain\Service\SendEvent;
+use PearTreeWeb\EventSourcerer\Client\Domain\Service\ReceiveEvent;
 use PearTreeWeb\EventSourcerer\Client\Exception\CouldNotProcessEvent;
 
-final class CatchupHandler implements CatchupHandlerInterface
+/**
+ * @todo is this used anywhere??????
+ */
+final class SocketReceiveEvent implements ReceiveEvent
 {
     private function __construct(
-        private readonly AcknowledgeEvent $acknowledgeEvent,
+        private readonly SendEvent $sendEvent,
         private ?Checkpoint $checkpoint,
         private readonly array $cachedEvents = []
     ) {}
 
-    public static function create(AcknowledgeEvent $acknowledgeEvent, ?Checkpoint $checkpoint = null): self
+    public static function create(SendEvent $acknowledgeEvent, ?Checkpoint $checkpoint = null): self
     {
         return new self($acknowledgeEvent, $checkpoint);
     }
@@ -63,9 +66,9 @@ final class CatchupHandler implements CatchupHandlerInterface
     {
         $eventHandler($decoded);
 
-//        $this->acknowledgeEvent->with(
-//            StreamId::fromString('some stream'), // @todo get stream!
-//            Checkpoint::fromInt($decoded['number'])
-//        );
+        $this->sendEvent->requestCatchupFor(
+            StreamId::fromString('some stream'), // @todo get stream!
+            Checkpoint::fromInt($decoded['number'])
+        );
     }
 }

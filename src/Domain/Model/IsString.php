@@ -6,7 +6,7 @@ namespace PearTreeWeb\EventSourcerer\Client\Domain\Model;
 
 interface IsString
 {
-    public const NULL_REPRESENTATION = '';
+    public const string NULL_REPRESENTATION = '';
 
     public static function fromString(string $value): self;
 

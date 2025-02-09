@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace PearTreeWeb\EventSourcerer\Client\Domain\Service;
 
-interface CatchupHandler
+interface ReceiveEvent
 {
     public function handleReceivedEvent(callable $eventHandler): callable;
 }

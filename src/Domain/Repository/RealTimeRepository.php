@@ -8,8 +8,7 @@ use PearTreeWeb\EventSourcerer\Client\Domain\Model\StreamId;
 
 interface RealTimeRepository
 {
-    public function catchup(
-        callable $eventHandler,
+    public function requestCatchup(
         ApplicationId $applicationId,
         StreamId $stream,
         ?Checkpoint $checkpoint = null
