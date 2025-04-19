@@ -1,5 +1,5 @@
 {
-    "name": "peartreeweb/event-sourcerer-client",
+    "name": "eventsourcerer/event-sourcerer-client",
     "description": "A PHP library to interact with Event Sourcerer",
     "type": "library",
     "license": "proprietary",
