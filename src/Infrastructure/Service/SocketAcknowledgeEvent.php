@@ -4,12 +4,15 @@ declare(strict_types=1);
 
 namespace PearTreeWeb\EventSourcerer\Client\Infrastructure\Service;
 
-use PearTreeWeb\EventSourcerer\Client\Domain\Model\ApplicationId;
-use PearTreeWeb\EventSourcerer\Client\Domain\Model\Checkpoint;
-use PearTreeWeb\EventSourcerer\Client\Domain\Model\StreamId;
 use PearTreeWeb\EventSourcerer\Client\Domain\Service\AcknowledgeEvent;
+use PearTreeWebLtd\EventSourcererMessageUtilities\Model\ApplicationId;
+use PearTreeWebLtd\EventSourcererMessageUtilities\Model\Checkpoint;
+use PearTreeWebLtd\EventSourcererMessageUtilities\Model\StreamId;
 use React\Socket\ConnectionInterface;
 
+/**
+ * @todo is this used???
+ */
 final readonly class SocketAcknowledgeEvent implements AcknowledgeEvent
 {
     public function __construct(private ConnectionInterface $connection) {}

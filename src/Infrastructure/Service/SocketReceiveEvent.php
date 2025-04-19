@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace PearTreeWeb\EventSourcerer\Client\Infrastructure\Service;
 
-use PearTreeWeb\EventSourcerer\Client\Domain\Model\Checkpoint;
-use PearTreeWeb\EventSourcerer\Client\Domain\Model\StreamId;
 use PearTreeWeb\EventSourcerer\Client\Domain\Service\SendEvent;
 use PearTreeWeb\EventSourcerer\Client\Domain\Service\ReceiveEvent;
 use PearTreeWeb\EventSourcerer\Client\Exception\CouldNotProcessEvent;
+use PearTreeWebLtd\EventSourcererMessageUtilities\Model\Checkpoint;
+use PearTreeWebLtd\EventSourcererMessageUtilities\Model\StreamId;
 
 /**
  * @todo is this used anywhere??????

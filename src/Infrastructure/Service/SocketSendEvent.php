@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace PearTreeWeb\EventSourcerer\Client\Infrastructure\Service;
 
-use PearTreeWeb\EventSourcerer\Client\Domain\Model\Checkpoint;
-use PearTreeWeb\EventSourcerer\Client\Domain\Model\StreamId;
 use PearTreeWeb\EventSourcerer\Client\Domain\Service\SendEvent as AcknowledgeEventInterface;
+use PearTreeWebLtd\EventSourcererMessageUtilities\Model\Checkpoint;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Model\MessagePattern;
+use PearTreeWebLtd\EventSourcererMessageUtilities\Model\StreamId;
 use React\Socket\ConnectionInterface;
 
 final readonly class SocketSendEvent implements AcknowledgeEventInterface

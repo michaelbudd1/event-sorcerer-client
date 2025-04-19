@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace PearTreeWeb\EventSourcerer\Client\Infrastructure\Repository;
 
-use PearTreeWeb\EventSourcerer\Client\Domain\Model\Checkpoint;
 use PearTreeWeb\EventSourcerer\Client\Domain\Model\Stream;
-use PearTreeWeb\EventSourcerer\Client\Domain\Model\StreamId;
 use PearTreeWeb\EventSourcerer\Client\Domain\Model\StreamName;
 use PearTreeWeb\EventSourcerer\Client\Domain\Repository\StreamRepository;
 use PearTreeWeb\EventSourcerer\Client\Exception\CouldNotStoreEventException;
 use PearTreeWeb\EventSourcerer\Client\Infrastructure\Config;
+use PearTreeWebLtd\EventSourcererMessageUtilities\Model\Checkpoint;
+use PearTreeWebLtd\EventSourcererMessageUtilities\Model\StreamId;
 use Symfony\Component\HttpClient\Exception\ClientException;
 use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;

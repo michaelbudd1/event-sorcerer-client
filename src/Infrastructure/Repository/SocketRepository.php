@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace PearTreeWeb\EventSourcerer\Client\Infrastructure\Repository;
 
-use PearTreeWeb\EventSourcerer\Client\Domain\Model\ApplicationId;
-use PearTreeWeb\EventSourcerer\Client\Domain\Model\Checkpoint;
-use PearTreeWeb\EventSourcerer\Client\Domain\Model\StreamId;
 use PearTreeWeb\EventSourcerer\Client\Domain\Repository\RealTimeRepository;
-use PearTreeWeb\EventSourcerer\Client\Infrastructure\Service\CreateMessage;
+use PearTreeWebLtd\EventSourcererMessageUtilities\Model\ApplicationId;
+use PearTreeWebLtd\EventSourcererMessageUtilities\Model\Checkpoint;
+use PearTreeWebLtd\EventSourcererMessageUtilities\Model\StreamId;
+use PearTreeWebLtd\EventSourcererMessageUtilities\Service\CreateMessage;
 use React\Socket\ConnectionInterface;
 use React\Socket\ConnectorInterface;
 

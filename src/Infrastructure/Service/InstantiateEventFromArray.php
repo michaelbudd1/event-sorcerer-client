@@ -18,7 +18,15 @@ final readonly class InstantiateEventFromArray
                 $classFilepath,
                 'fromArray'
             ),
-            $properties
+            self::mapProperties($properties)
         );
+    }
+
+    private static function mapProperties(array $properties): array
+    {
+        return collect($properties)
+            ->mapWithKeys(static fn (array $property): array => [
+                $property['name'] => $property['serializedValue']
+            ])->all();
     }
 }
