@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "19c13a5c4ab4d626dc8a3f0d314cb35c",
+    "content-hash": "22d170641774550626f9370dffc636c5",
     "packages": [
         {
             "name": "evenement/evenement",
@@ -97,12 +97,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/michaelbudd1/event-sourcerer-symfony-messenger-transport.git",
-                "reference": "699d72f00cadb91d51a0bf2352c1ce399ab2d26c"
+                "reference": "7b02d6295e51d5b48ff4fd61e43dfde7b31054d2"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/michaelbudd1/event-sourcerer-symfony-messenger-transport/zipball/699d72f00cadb91d51a0bf2352c1ce399ab2d26c",
-                "reference": "699d72f00cadb91d51a0bf2352c1ce399ab2d26c",
+                "url": "https://api.github.com/repos/michaelbudd1/event-sourcerer-symfony-messenger-transport/zipball/7b02d6295e51d5b48ff4fd61e43dfde7b31054d2",
+                "reference": "7b02d6295e51d5b48ff4fd61e43dfde7b31054d2",
                 "shasum": ""
             },
             "require": {
@@ -132,7 +132,7 @@
                 "issues": "https://github.com/michaelbudd1/event-sourcerer-symfony-messenger-transport/issues",
                 "source": "https://github.com/michaelbudd1/event-sourcerer-symfony-messenger-transport/tree/main"
             },
-            "time": "2025-04-18T08:02:18+00:00"
+            "time": "2025-04-19T19:30:20+00:00"
         },
         {
             "name": "illuminate/collections",
