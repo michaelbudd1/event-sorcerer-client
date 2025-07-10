@@ -42,7 +42,7 @@ final readonly class Client
 
                         $decodedEvent = self::decodeEvent($parsedEvent);
 
-                        $eventHandler($decodedEvent);
+                        $eventHandler()($decodedEvent);
 
                         self::acknowledgeEvent($connection, $applicationId, $decodedEvent);
                     }
