@@ -15,11 +15,7 @@ use React\Socket\Connector;
 
 final readonly class Client
 {
-    public function __construct(
-        private string $eventSourcererHost,
-        private int $socketPort,
-        private string $eventSourcererApplicationId
-    ) {}
+    public function __construct(private Config $config) {}
 
     public function fetchMessages(callable $eventHandler): void
     {
@@ -28,12 +24,12 @@ final readonly class Client
             ->connect(
                 sprintf(
                     '%s:%d',
-                    $this->eventSourcererHost,
-                    $this->socketPort
+                    $this->config->serverUrl,
+                    $this->config->serverPort
                 )
             )
             ->then(function (ConnectionInterface $connection) use ($eventHandler) {
-                $applicationId = ApplicationId::fromString($this->eventSourcererApplicationId);
+                $applicationId = ApplicationId::fromString($this->config->eventSourcererApplicationId);
                 $connection->write(CreateMessage::forProvidingIdentity($applicationId));
                 $connection->on('data', function (string $event) use ($applicationId, $connection, $eventHandler)  {
                     $events = explode(MessageMarkup::NewEventParser->value, $event);
