@@ -11,12 +11,11 @@ use PearTreeWebLtd\EventSourcererMessageUtilities\Model\MessageType;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Model\StreamId;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Service\CreateMessage;
 use React\Socket\ConnectionInterface;
-use React\Socket\ConnectorInterface;
+use React\Socket\Connector;
 
 final readonly class Client
 {
     public function __construct(
-        private ConnectorInterface $connector,
         private string $eventSourcererHost,
         private int $socketPort,
         private string $eventSourcererApplicationId
@@ -25,8 +24,7 @@ final readonly class Client
     public function fetchMessages(callable $eventHandler): void
     {
         /** @todo this infrastructure concerned code should be in the event-sourcerer-client repo! */
-        $this
-            ->connector
+        (new Connector())
             ->connect(
                 sprintf(
                     '%s:%d',
