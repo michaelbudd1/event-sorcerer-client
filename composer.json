@@ -23,7 +23,6 @@
     "prefer-stable": true,
     "require": {
         "symfony/http-client": "7.2.*",
-        "illuminate/collections": "^11.38",
         "revolt/event-loop": "^1.0",
         "react/socket": "^1.16",
         "eventsourcerer/message-utilities": "dev-main",

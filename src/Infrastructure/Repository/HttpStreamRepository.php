@@ -57,9 +57,13 @@ final readonly class HttpStreamRepository implements StreamRepository
 
     private static function keyPropertiesByName(array $events): array
     {
-        return collect($events)
-            ->keyBy('event')
-            ->all();
+        $properties = [];
+
+        foreach ($events as $event) {
+            $properties[$event['event']] = $event;
+        }
+
+        return $properties;
     }
 
     private function saveEvent(Stream $aggregate, mixed $event): ResponseInterface

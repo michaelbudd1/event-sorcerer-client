@@ -24,9 +24,12 @@ final readonly class InstantiateEventFromArray
 
     private static function mapProperties(array $properties): array
     {
-        return collect($properties)
-            ->mapWithKeys(static fn (array $property): array => [
-                $property['name'] => $property['serializedValue']
-            ])->all();
+        $return = [];
+
+        foreach ($properties as $property) {
+            $return[$property['name']] = $property['serializedValue'];
+        }
+
+        return $return;
     }
 }
