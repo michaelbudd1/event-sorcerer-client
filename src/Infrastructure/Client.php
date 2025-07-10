@@ -23,7 +23,7 @@ final readonly class Client
             ->connect(
                 sprintf(
                     '%s:%d',
-                    $this->config->serverUrl,
+                    $this->config->serverHost,
                     $this->config->serverPort
                 )
             )
