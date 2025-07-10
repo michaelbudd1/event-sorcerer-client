@@ -19,7 +19,6 @@ final readonly class Client
 
     public function fetchMessages(callable $eventHandler): void
     {
-        /** @todo this infrastructure concerned code should be in the event-sourcerer-client repo! */
         (new Connector())
             ->connect(
                 sprintf(
