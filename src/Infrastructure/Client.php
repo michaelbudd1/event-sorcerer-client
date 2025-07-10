@@ -32,7 +32,7 @@ final readonly class Client
                 $connection->write(CreateMessage::forProvidingIdentity($applicationId));
                 $connection->on('data', function (string $event) use ($applicationId, $connection, $eventHandler)  {
                     $events = explode(MessageMarkup::NewEventParser->value, $event);
-dd($events);
+
                     // @todo do not process event if skipped events
 
                     foreach ($events as $parsedEvent) {
