@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace PearTreeWeb\EventSourcerer\Client\Exception;
 
-class NoRepositoryAssignedToHandleEvent extends \RuntimeException
+final class NoRepositoryAssignedToHandleEvent extends \RuntimeException
 {
     public static function withName(string $event): self
     {
