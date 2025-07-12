@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace PearTreeWeb\EventSourcerer\Client\Infrastructure;
 
+use PearTreeWeb\EventSourcerer\Client\Infrastructure\Exception\CannotFetchMessages;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Model\ApplicationId;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Model\Checkpoint;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Model\MessageMarkup;
@@ -14,29 +15,37 @@ use React\Promise\PromiseInterface;
 use React\Socket\ConnectionInterface;
 use React\Socket\Connector;
 
-final class Client
+final readonly class Client
 {
-    /** @var PromiseInterface<ConnectionInterface> */
-    private PromiseInterface $connection;
-
-    public function __construct(private readonly Config $config) {}
+    /**
+     * @param PromiseInterface<ConnectionInterface>|null $connection
+     */
+    public function __construct(
+        private Config $config,
+        private ?PromiseInterface $connection = null
+    ) {}
 
     public function connect(): self
     {
-        $this->connection = (new Connector())
-            ->connect(
-                sprintf(
-                    '%s:%d',
-                    $this->config->serverHost,
-                    $this->config->serverPort
+        return new self(
+            $this->config,
+            (new Connector())
+                ->connect(
+                    sprintf(
+                        '%s:%d',
+                        $this->config->serverHost,
+                        $this->config->serverPort
+                    )
                 )
-            );
-
-        return $this;
+        );
     }
 
     public function fetchMessages(callable $eventHandler): void
     {
+        if (null === $this->connection) {
+            throw CannotFetchMessages::beforeConnectionHasBeenEstablished();
+        }
+
         $this
             ->connection
             ->then(function (ConnectionInterface $connection) use ($eventHandler) {
