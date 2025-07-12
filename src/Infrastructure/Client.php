@@ -10,23 +10,33 @@ use PearTreeWebLtd\EventSourcererMessageUtilities\Model\MessageMarkup;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Model\MessageType;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Model\StreamId;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Service\CreateMessage;
+use React\Promise\PromiseInterface;
 use React\Socket\ConnectionInterface;
 use React\Socket\Connector;
 
-final readonly class Client
+final class Client
 {
-    public function __construct(private Config $config) {}
+    /** @var PromiseInterface<ConnectionInterface> */
+    private PromiseInterface $connection;
 
-    public function fetchMessages(callable $eventHandler): void
+    public function __construct(private readonly Config $config) {}
+
+    public function connect(): void
     {
-        (new Connector())
+        $this->connection = (new Connector())
             ->connect(
                 sprintf(
                     '%s:%d',
                     $this->config->serverHost,
                     $this->config->serverPort
                 )
-            )
+            );
+    }
+
+    public function fetchMessages(callable $eventHandler): void
+    {
+        $this
+            ->connection
             ->then(function (ConnectionInterface $connection) use ($eventHandler) {
                 $applicationId = ApplicationId::fromString($this->config->eventSourcererApplicationId);
                 $connection->write(CreateMessage::forProvidingIdentity($applicationId));
