@@ -21,7 +21,7 @@ final class Client
 
     public function __construct(private readonly Config $config) {}
 
-    public function connect(): void
+    public function connect(): self
     {
         $this->connection = (new Connector())
             ->connect(
@@ -31,6 +31,8 @@ final class Client
                     $this->config->serverPort
                 )
             );
+
+        return $this;
     }
 
     public function fetchMessages(callable $eventHandler): void
