@@ -14,7 +14,6 @@ use PearTreeWebLtd\EventSourcererMessageUtilities\Service\CreateMessage;
 use React\Promise\PromiseInterface;
 use React\Socket\ConnectionInterface;
 use React\Socket\Connector;
-use function React\Async\await;
 
 final readonly class Client
 {
@@ -28,20 +27,16 @@ final readonly class Client
 
     public function connect(): self
     {
-        $connection = (new Connector())
-            ->connect(
-                sprintf(
-                    '%s:%d',
-                    $this->config->serverHost,
-                    $this->config->serverPort
-                )
-            );
-
-        await($connection);
-
         return new self(
             $this->config,
-            $connection
+            (new Connector())
+                ->connect(
+                    sprintf(
+                        '%s:%d',
+                        $this->config->serverHost,
+                        $this->config->serverPort
+                    )
+                )
         );
     }
 
