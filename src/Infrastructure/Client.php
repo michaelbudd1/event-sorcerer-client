@@ -51,8 +51,9 @@ final readonly class Client
             ->then(function (ConnectionInterface $connection) use ($eventHandler) {
                 $applicationId = ApplicationId::fromString($this->config->eventSourcererApplicationId);
 
-                $connection->write(CreateMessage::forCatchupRequest(StreamId::fromString('*'), $applicationId));
                 $connection->write(CreateMessage::forProvidingIdentity($applicationId));
+                $connection->write(CreateMessage::forCatchupRequest(StreamId::fromString('*'), $applicationId));
+
                 $connection->on('data', function (string $event) use ($applicationId, $connection, $eventHandler)  {
                     $events = explode(MessageMarkup::NewEventParser->value, $event);
 
