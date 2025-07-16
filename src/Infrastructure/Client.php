@@ -57,14 +57,18 @@ final readonly class Client
                 $connection->on('data', function (string $event) use ($applicationId, $connection, $eventHandler)  {
                     $events = explode(MessageMarkup::NewEventParser->value, $event);
 
-                    // @todo do not process event if skipped events
-
                     foreach ($events as $parsedEvent) {
                         if ('' === $parsedEvent) {
                             continue;
                         }
 
-                        $decodedEvent = self::decodeEvent($parsedEvent);
+                        try {
+                            $decodedEvent = self::decodeEvent($parsedEvent);
+                        } catch (\JsonException $e) {
+                            echo $e->getMessage();
+                            var_dump($parsedEvent);
+                            die;
+                        }
 
                         $eventHandler($decodedEvent);
 
@@ -93,9 +97,10 @@ final readonly class Client
     ): void {
         $connection->write(
             CreateMessage::forAcknowledgement(
-                StreamId::fromString($decodedEvent['catchupRequestStream'] ?? $decodedEvent['stream']),
+                StreamId::fromString($decodedEvent['stream']),
                 $applicationId,
-                Checkpoint::fromInt($decodedEvent['number'])
+                Checkpoint::fromInt($decodedEvent['number']),
+                Checkpoint::fromInt($decodedEvent['allSequence'])
             )
         );
     }
