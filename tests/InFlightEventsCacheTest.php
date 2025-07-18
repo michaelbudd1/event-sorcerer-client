@@ -30,8 +30,8 @@ final class InFlightEventsCacheTest extends TestCase
     #[Test]
     public function itReturnsCorrectEvents(): void
     {
-        $this->cache->addEventForApplicationId($this->applicationId, self::event(1));
-        $this->cache->addEventForApplicationId($this->applicationId, self::event(2));
+        $this->cache->addEventForApplicationId($this->applicationId, $this->event(1));
+        $this->cache->addEventForApplicationId($this->applicationId, $this->event(2));
 
         $items = \iterator_to_array($this->cache->forApplicationIdAndStreamId($this->applicationId, $this->streamId));
 
@@ -43,11 +43,11 @@ final class InFlightEventsCacheTest extends TestCase
     #[Test]
     public function itRemovesIndividualEvent(): void
     {
-        $eventTwo = self::event(2);
+        $eventTwo = $this->event(2);
 
-        $this->cache->addEventForApplicationId($this->applicationId, self::event(1));
+        $this->cache->addEventForApplicationId($this->applicationId, $this->event(1));
         $this->cache->addEventForApplicationId($this->applicationId, $eventTwo);
-        $this->cache->addEventForApplicationId($this->applicationId, self::event(3));
+        $this->cache->addEventForApplicationId($this->applicationId, $this->event(3));
 
         $this->cache->removeEventForApplicationId($this->applicationId, $eventTwo);
 
@@ -60,9 +60,9 @@ final class InFlightEventsCacheTest extends TestCase
     #[Test]
     public function itReturnsEmptyWhenAllEventsRemoved(): void
     {
-        $eventOne   = self::event(1);
-        $eventTwo   = self::event(2);
-        $eventThree = self::event(3);
+        $eventOne   = $this->event(1);
+        $eventTwo   = $this->event(2);
+        $eventThree = $this->event(3);
 
         $this->cache->addEventForApplicationId($this->applicationId, $eventOne);
         $this->cache->addEventForApplicationId($this->applicationId, $eventTwo);
@@ -77,11 +77,11 @@ final class InFlightEventsCacheTest extends TestCase
         );
     }
 
-    private static function event(int $number): array
+    private function event(int $number): array
     {
         return [
             'number' => $number,
-            'stream' => '00000000-0000-0000-0000-000000000000',
+            'stream' => $this->streamId->toString(),
         ];
     }
 }
