@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace PearTreeWeb\EventSourcerer\Client\Infrastructure;
 
+use PearTreeWeb\EventSourcerer\Client\Domain\Repository\InFlightEvents;
 use PearTreeWeb\EventSourcerer\Client\Infrastructure\Exception\CannotFetchMessages;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Model\ApplicationId;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Model\Checkpoint;
@@ -22,6 +23,7 @@ final readonly class Client
      */
     public function __construct(
         private Config $config,
+        private InFlightEvents $inFlightEvents,
         private ?PromiseInterface $connection = null
     ) {}
 
@@ -29,6 +31,7 @@ final readonly class Client
     {
         return new self(
             $this->config,
+            $this->inFlightEvents,
             (new Connector())
                 ->connect(
                     sprintf(
@@ -70,9 +73,20 @@ final readonly class Client
                             die;
                         }
 
-                        $eventHandler($decodedEvent);
+                        $streamId = StreamId::fromString($decodedEvent['stream']);
 
-                        self::acknowledgeEvent($connection, $applicationId, $decodedEvent);
+                        if ($this->inFlightEvents->containsEventsForApplicationIdAndStreamId($applicationId, $streamId)) {
+                            $this->addInFlightEvent($applicationId, $decodedEvent);
+
+                            continue;
+                        }
+
+                        $this->addInFlightEvent($applicationId, $decodedEvent);
+                        $this->processEvent($connection, $applicationId, $decodedEvent, $eventHandler);
+
+                        foreach ($this->inFlightEvents($applicationId, $streamId) as $inFlightEvent) {
+                            $this->processEvent($connection, $applicationId, $inFlightEvent, $eventHandler);
+                        }
                     }
                 });
             });
@@ -103,5 +117,27 @@ final readonly class Client
                 Checkpoint::fromInt($decodedEvent['allSequence'])
             )
         );
+    }
+
+    private function addInFlightEvent(ApplicationId $applicationId, array $decodedEvent): void
+    {
+        $this->inFlightEvents->addEventForApplicationId($applicationId, $decodedEvent);
+    }
+
+    private function processEvent(
+        ConnectionInterface $connection,
+        ApplicationId $applicationId,
+        array $decodedEvent,
+        callable $eventHandler
+    ): void {
+        $eventHandler($decodedEvent);
+        self::acknowledgeEvent($connection, $applicationId, $decodedEvent);
+
+        $this->inFlightEvents->removeEventForApplicationId($applicationId, $decodedEvent);
+    }
+
+    private function inFlightEvents(ApplicationId $applicationId, StreamId $streamId): iterable
+    {
+        return $this->inFlightEvents->forApplicationIdAndStreamId($applicationId, $streamId);
     }
 }
