@@ -64,19 +64,18 @@ final readonly class Client
                     )
                 );
 
+                echo sprintf(
+                    'Requesting catchup from position %d',
+                    $this->inFlightEvents->inFlightCheckpoint()?->toInt() ?? 0
+                );
+
                 $connection->on('data', function (string $event) use ($applicationId, $connection, $eventHandler)  {
                     $events = \array_filter(explode(MessageMarkup::NewEventParser->value, $event));
 
                     foreach ($events as $parsedEvent) {
                         $this->setInFlightCheckpoint($events);
 
-                        try {
-                            $decodedEvent = self::decodeEvent($parsedEvent);
-                        } catch (\JsonException) {
-                            echo self::jsonDecodeErrorMessage($parsedEvent);
-
-                            die;
-                        }
+                        $decodedEvent = self::decodeEvent($parsedEvent);
 
                         $streamId = StreamId::fromString($decodedEvent['stream']);
 
@@ -99,14 +98,21 @@ final readonly class Client
 
     private static function decodeEvent(string $event): array
     {
-        return json_decode(
-            trim(
-                str_replace(MessageType::NewEvent->value, '', $event)
-            ),
-            true,
-            512,
-            JSON_THROW_ON_ERROR
-        );
+        try {
+            return json_decode(
+                trim(
+                    str_replace(MessageType::NewEvent->value, '', $event)
+                ),
+                true,
+                512,
+                JSON_THROW_ON_ERROR
+            );
+        } catch (\JsonException) {
+            echo self::jsonDecodeErrorMessage($event);
+
+            die;
+        }
+
     }
 
     private static function acknowledgeEvent(
