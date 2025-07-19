@@ -55,7 +55,14 @@ final readonly class Client
                 $applicationId = ApplicationId::fromString($this->config->eventSourcererApplicationId);
 
                 $connection->write(CreateMessage::forProvidingIdentity($applicationId));
-                $connection->write(CreateMessage::forCatchupRequest(StreamId::fromString('*'), $applicationId));
+
+                $connection->write(
+                    CreateMessage::forCatchupRequest(
+                        StreamId::fromString('*'),
+                        $applicationId,
+                        $this->inFlightEvents->inFlightCheckpoint()
+                    )
+                );
 
                 $connection->on('data', function (string $event) use ($applicationId, $connection, $eventHandler)  {
                     $events = explode(MessageMarkup::NewEventParser->value, $event);
@@ -67,9 +74,9 @@ final readonly class Client
 
                         try {
                             $decodedEvent = self::decodeEvent($parsedEvent);
-                        } catch (\JsonException $e) {
-                            echo $e->getMessage();
-                            var_dump($parsedEvent);
+                        } catch (\JsonException) {
+                            echo self::jsonDecodeErrorMessage($parsedEvent);
+
                             die;
                         }
 
@@ -131,6 +138,7 @@ final readonly class Client
         callable $eventHandler
     ): void {
         $eventHandler($decodedEvent);
+
         self::acknowledgeEvent($connection, $applicationId, $decodedEvent);
 
         $this->inFlightEvents->removeEventForApplicationId($applicationId, $decodedEvent);
@@ -139,5 +147,13 @@ final readonly class Client
     private function inFlightEvents(ApplicationId $applicationId, StreamId $streamId): iterable
     {
         return $this->inFlightEvents->forApplicationIdAndStreamId($applicationId, $streamId);
+    }
+
+    private static function jsonDecodeErrorMessage(string $parsedEvent): string
+    {
+        return sprintf(
+            'An error occurred attempting to decode message: %s',
+            $parsedEvent
+        );
     }
 }

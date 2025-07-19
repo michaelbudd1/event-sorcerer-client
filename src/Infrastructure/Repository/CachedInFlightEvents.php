@@ -7,11 +7,14 @@ namespace PearTreeWeb\EventSourcerer\Client\Infrastructure\Repository;
 use PearTreeWeb\EventSourcerer\Client\Domain\Repository\InFlightEvents;
 use PearTreeWeb\EventSourcerer\Client\Infrastructure\Service\Utils;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Model\ApplicationId;
+use PearTreeWebLtd\EventSourcererMessageUtilities\Model\Checkpoint;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Model\StreamId;
 use Psr\Cache\CacheItemPoolInterface;
 
 final readonly class CachedInFlightEvents implements InFlightEvents
 {
+    private const string IN_FLIGHT_CATCHUP_REQUEST_CHECKPOINT = 'checkpoint';
+
     public function __construct(private CacheItemPoolInterface $inFlightMessages) {}
 
     public function forApplicationIdAndStreamId(
@@ -76,5 +79,27 @@ final readonly class CachedInFlightEvents implements InFlightEvents
             ->save(
                 $updatedEvents->set($events)
             );
+    }
+
+    public function inFlightCheckpoint(): ?Checkpoint
+    {
+        $checkpoint = $this
+            ->inFlightMessages
+            ->getItem(self::IN_FLIGHT_CATCHUP_REQUEST_CHECKPOINT)
+            ->get();
+
+        return $checkpoint
+            ? Checkpoint::fromInt($checkpoint)
+            : null;
+    }
+
+    public function setInFlightCheckpoint(Checkpoint $checkpoint): void
+    {
+        $checkpointCacheItem = $this
+            ->inFlightMessages
+            ->getItem(self::IN_FLIGHT_CATCHUP_REQUEST_CHECKPOINT)
+            ->set($checkpoint->toInt());
+
+        $this->inFlightMessages->save($checkpointCacheItem);
     }
 }
