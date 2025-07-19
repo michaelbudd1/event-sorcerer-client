@@ -163,7 +163,7 @@ final readonly class Client
     {
         end($events);
 
-        $lastItem = current($events);
+        $lastItem = self::decodeEvent(current($events));
 
         $this->inFlightEvents->setInFlightCheckpoint(
             Checkpoint::fromInt($lastItem['number'])
