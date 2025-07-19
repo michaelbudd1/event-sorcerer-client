@@ -65,13 +65,9 @@ final readonly class Client
                 );
 
                 $connection->on('data', function (string $event) use ($applicationId, $connection, $eventHandler)  {
-                    $events = explode(MessageMarkup::NewEventParser->value, $event);
+                    $events = \array_filter(explode(MessageMarkup::NewEventParser->value, $event));
 
                     foreach ($events as $parsedEvent) {
-                        if ('' === $parsedEvent) {
-                            continue;
-                        }
-
                         $this->setInFlightCheckpoint($events);
 
                         try {
