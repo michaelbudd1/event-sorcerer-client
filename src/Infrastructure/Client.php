@@ -72,6 +72,8 @@ final readonly class Client
                             continue;
                         }
 
+                        $this->setInFlightCheckpoint($events);
+
                         try {
                             $decodedEvent = self::decodeEvent($parsedEvent);
                         } catch (\JsonException) {
@@ -154,6 +156,17 @@ final readonly class Client
         return sprintf(
             'An error occurred attempting to decode message: %s',
             $parsedEvent
+        );
+    }
+
+    private function setInFlightCheckpoint(array $events): void
+    {
+        end($events);
+
+        $lastItem = current($events);
+
+        $this->inFlightEvents->setInFlightCheckpoint(
+            Checkpoint::fromInt($lastItem['number'])
         );
     }
 }
