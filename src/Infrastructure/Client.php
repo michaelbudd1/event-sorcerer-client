@@ -178,6 +178,6 @@ final readonly class Client
     {
         return $this->inFlightEvents->inFlightCheckpoint()?->isGreaterThan(
             Checkpoint::fromInt($decodedEvent['allSequence'])
-        );
+        ) ?? false;
     }
 }
