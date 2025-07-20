@@ -73,11 +73,13 @@ final readonly class Client
                     $events = \array_filter(explode(MessageMarkup::NewEventParser->value, $event));
 
                     foreach ($events as $parsedEvent) {
-                        $this->setInFlightCheckpoint($events);
-
                         $decodedEvent = self::decodeEvent($parsedEvent);
 
                         $streamId = StreamId::fromString($decodedEvent['stream']);
+
+                        if ($this->isAlreadyBeingProcessedByAnotherProcess($decodedEvent)) {
+                            continue;
+                        }
 
                         if ($this->inFlightEvents->containsEventsForApplicationIdAndStreamId($applicationId, $streamId)) {
                             $this->addInFlightEvent($applicationId, $decodedEvent);
@@ -169,6 +171,13 @@ final readonly class Client
 
         $this->inFlightEvents->setInFlightCheckpoint(
             Checkpoint::fromInt($lastItem['number'])
+        );
+    }
+
+    private function isAlreadyBeingProcessedByAnotherProcess(array $decodedEvent): bool
+    {
+        return $this->inFlightEvents->inFlightCheckpoint()?->isGreaterThan(
+            Checkpoint::fromInt($decodedEvent['allSequence'])
         );
     }
 }

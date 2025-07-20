@@ -52,6 +52,8 @@ final readonly class CachedInFlightEvents implements InFlightEvents
             ->set($events);
 
         $this->inFlightMessages->save($inFlightItem);
+
+        $this->setInFlightCheckpoint(Checkpoint::fromInt($event['allSequence']));
     }
 
     public function removeEventForApplicationId(ApplicationId $applicationId, array $event): void
