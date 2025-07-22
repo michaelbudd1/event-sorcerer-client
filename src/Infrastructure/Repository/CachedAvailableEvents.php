@@ -30,6 +30,8 @@ final readonly class CachedAvailableEvents implements AvailableEvents
 
             return $event;
         }
+
+        return null;
     }
 
     public function remove(int $index): void
