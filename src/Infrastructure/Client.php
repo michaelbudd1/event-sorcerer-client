@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace PearTreeWeb\EventSourcerer\Client\Infrastructure;
 
+use PearTreeWeb\EventSourcerer\Client\Domain\Repository\AvailableEvents;
 use PearTreeWeb\EventSourcerer\Client\Domain\Repository\InFlightEvents;
 use PearTreeWeb\EventSourcerer\Client\Infrastructure\Exception\CannotFetchMessages;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Model\ApplicationId;
@@ -24,6 +25,7 @@ final readonly class Client
     public function __construct(
         private Config $config,
         private InFlightEvents $inFlightEvents,
+        private AvailableEvents $availableEvents,
         private ?PromiseInterface $connection = null
     ) {}
 
@@ -32,6 +34,7 @@ final readonly class Client
         return new self(
             $this->config,
             $this->inFlightEvents,
+            $this->availableEvents,
             (new Connector())
                 ->connect(
                     sprintf(
@@ -64,20 +67,19 @@ final readonly class Client
                     )
                 );
 
-                echo sprintf(
-                    'Requesting catchup from position %d',
-                    $this->inFlightEvents->inFlightCheckpoint()?->toInt() ?? 0
-                );
+                $connection->on('data', function (string $events) use ($applicationId, $connection, $eventHandler)  {
+                    $this->addEventsForProcessing($events);
 
-                $connection->on('data', function (string $event) use ($applicationId, $connection, $eventHandler)  {
-                    $events = \array_filter(explode(MessageMarkup::NewEventParser->value, $event));
-
-                    foreach ($events as $parsedEvent) {
+                    while ($parsedEvent = $this->availableEvents->fetchOne()) {
+//
+//                    foreach ($this->catchupEvents-> as $parsedEvent) {
                         $decodedEvent = self::decodeEvent($parsedEvent);
-
                         $streamId = StreamId::fromString($decodedEvent['stream']);
 
-                        if ($this->isAlreadyBeingProcessedByAnotherProcess($decodedEvent)) {
+                        if (
+                            $this->isAlreadyBeingProcessedByAnotherProcess($decodedEvent)
+                            || $this->hasAlreadyBeenProcessed()
+                        ) {
                             continue;
                         }
 
@@ -114,7 +116,6 @@ final readonly class Client
 
             die;
         }
-
     }
 
     private static function acknowledgeEvent(
@@ -163,21 +164,22 @@ final readonly class Client
         );
     }
 
-    private function setInFlightCheckpoint(array $events): void
-    {
-        end($events);
-
-        $lastItem = self::decodeEvent(current($events));
-
-        $this->inFlightEvents->setInFlightCheckpoint(
-            Checkpoint::fromInt($lastItem['number'])
-        );
-    }
-
     private function isAlreadyBeingProcessedByAnotherProcess(array $decodedEvent): bool
     {
         return $this->inFlightEvents->inFlightCheckpoint()?->isGreaterThan(
             Checkpoint::fromInt($decodedEvent['allSequence'])
         ) ?? false;
+    }
+
+    private function hasAlreadyBeenProcessed(): bool
+    {
+        return false;
+    }
+
+    private function addEventsForProcessing(string $events): void
+    {
+        foreach (\array_filter(explode(MessageMarkup::NewEventParser->value, $events)) as $event) {
+            $this->availableEvents->add($event);
+        }
     }
 }

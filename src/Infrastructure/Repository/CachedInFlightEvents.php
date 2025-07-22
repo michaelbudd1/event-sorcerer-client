@@ -23,7 +23,7 @@ final readonly class CachedInFlightEvents implements InFlightEvents
     ): iterable {
         return $this
             ->inFlightMessages
-            ->getItem(Utils::inFlightKey($applicationId, $streamId))
+            ->getItem(Utils::cacheKey($applicationId, $streamId))
             ->get() ?? [];
     }
 
@@ -33,14 +33,14 @@ final readonly class CachedInFlightEvents implements InFlightEvents
     ): bool {
         return $this
             ->inFlightMessages
-            ->hasItem(Utils::inFlightKey($applicationId, $streamId));
+            ->hasItem(Utils::cacheKey($applicationId, $streamId));
     }
 
     public function addEventForApplicationId(ApplicationId $applicationId, array $event): void
     {
         $streamId = StreamId::fromString($event['stream']);
 
-        $inFlightKey = Utils::inFlightKey($applicationId, $streamId);
+        $inFlightKey = Utils::cacheKey($applicationId, $streamId);
 
         $events = $this->forApplicationIdAndStreamId($applicationId, $streamId);
 
@@ -60,7 +60,7 @@ final readonly class CachedInFlightEvents implements InFlightEvents
     {
         $streamId = StreamId::fromString($event['stream']);
 
-        $inFlightKey = Utils::inFlightKey($applicationId, $streamId);
+        $inFlightKey = Utils::cacheKey($applicationId, $streamId);
 
         $events = $this->forApplicationIdAndStreamId($applicationId, $streamId);
 

@@ -9,7 +9,7 @@ use PearTreeWebLtd\EventSourcererMessageUtilities\Model\StreamId;
 
 final class Utils
 {
-    public static function inFlightKey(
+    public static function cacheKey(
         ApplicationId $applicationId,
         StreamId $streamId
     ): string {
