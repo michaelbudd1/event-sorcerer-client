@@ -15,7 +15,7 @@ final readonly class CachedAvailableEvents implements AvailableEvents
     {
         $this
             ->availableEvents
-            ->getItem($event['allSequence'])
+            ->getItem(self::uniqueKey($event['allSequence']))
             ->set($event);
     }
 
@@ -30,6 +30,11 @@ final readonly class CachedAvailableEvents implements AvailableEvents
     {
         $this
             ->availableEvents
-            ->deleteItem($index);
+            ->deleteItem(self::uniqueKey($index));
+    }
+
+    private static function uniqueKey(int $allSequence): string
+    {
+        return sprintf('event-%d', $allSequence);
     }
 }
