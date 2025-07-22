@@ -71,13 +71,9 @@ final readonly class Client
                     $this->addEventsForProcessing($applicationId, $events);
 
                     while ($decodedEvent = $this->availableEvents->fetchOne($applicationId)) {
-                        dd($decodedEvent);
                         $streamId = StreamId::fromString($decodedEvent['stream']);
 
-                        if (
-                            $this->isAlreadyBeingProcessedByAnotherProcess($decodedEvent)
-                            || $this->hasAlreadyBeenProcessed()
-                        ) {
+                        if ($this->isAlreadyBeingProcessedByAnotherProcess($decodedEvent)) {
                             continue;
                         }
 
@@ -167,11 +163,6 @@ final readonly class Client
         return $this->inFlightEvents->inFlightCheckpoint()?->isGreaterThan(
             Checkpoint::fromInt($decodedEvent['allSequence'])
         ) ?? false;
-    }
-
-    private function hasAlreadyBeenProcessed(): bool
-    {
-        return false;
     }
 
     private function addEventsForProcessing(ApplicationId $applicationId, string $events): void
