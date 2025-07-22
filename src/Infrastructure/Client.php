@@ -70,10 +70,9 @@ final readonly class Client
                 $connection->on('data', function (string $events) use ($applicationId, $connection, $eventHandler)  {
                     $this->addEventsForProcessing($events);
 
-                    while ($parsedEvent = $this->availableEvents->fetchOne()) {
+                    while ($decodedEvent = $this->availableEvents->fetchOne()) {
 //
 //                    foreach ($this->catchupEvents-> as $parsedEvent) {
-                        $decodedEvent = self::decodeEvent($parsedEvent);
                         $streamId = StreamId::fromString($decodedEvent['stream']);
 
                         if (
@@ -179,7 +178,7 @@ final readonly class Client
     private function addEventsForProcessing(string $events): void
     {
         foreach (\array_filter(explode(MessageMarkup::NewEventParser->value, $events)) as $event) {
-            $this->availableEvents->add($event);
+            $this->availableEvents->add(self::decodeEvent($event));
         }
     }
 }

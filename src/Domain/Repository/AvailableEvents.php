@@ -6,7 +6,7 @@ interface AvailableEvents
 {
     public function add(array $event): void;
 
-    public function fetchOne(): ?string;
+    public function fetchOne(): ?array;
 
     public function remove(int $index): void;
 }

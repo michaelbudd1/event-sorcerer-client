@@ -19,7 +19,7 @@ final readonly class CachedAvailableEvents implements AvailableEvents
             ->set($event);
     }
 
-    public function fetchOne(): ?string
+    public function fetchOne(): ?array
     {
         $items = $this->availableEvents->getItems();
 
