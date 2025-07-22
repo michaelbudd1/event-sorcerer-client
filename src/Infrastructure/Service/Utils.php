@@ -9,7 +9,7 @@ use PearTreeWebLtd\EventSourcererMessageUtilities\Model\StreamId;
 
 final class Utils
 {
-    public static function cacheKey(
+    public static function inFlightCacheKey(
         ApplicationId $applicationId,
         StreamId $streamId
     ): string {
@@ -18,5 +18,10 @@ final class Utils
             $applicationId,
             $streamId
         );
+    }
+
+    public static function availableMessagesCacheKey(ApplicationId $applicationId): string
+    {
+        return sprintf('availableMessages-%s', $applicationId);
     }
 }

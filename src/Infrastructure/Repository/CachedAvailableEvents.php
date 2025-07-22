@@ -5,32 +5,46 @@ declare(strict_types=1);
 namespace PearTreeWeb\EventSourcerer\Client\Infrastructure\Repository;
 
 use PearTreeWeb\EventSourcerer\Client\Domain\Repository\AvailableEvents;
+use PearTreeWeb\EventSourcerer\Client\Infrastructure\Service\Utils;
+use PearTreeWebLtd\EventSourcererMessageUtilities\Model\ApplicationId;
 use Psr\Cache\CacheItemInterface;
 use Psr\Cache\CacheItemPoolInterface;
 
 final readonly class CachedAvailableEvents implements AvailableEvents
 {
-    public function __construct(private CacheItemPoolInterface $availableEvents) {}
+    public function __construct(private CacheItemPoolInterface $cache) {}
 
-    public function add(array $event): void
+    public function add(ApplicationId $applicationId, array $event): void
     {
-        $availableEvent = $this
-            ->availableEvents
-            ->getItem(self::uniqueKey($event['allSequence']))
-            ->set($event);
+        $availableEventsCacheItem = $this
+            ->cache
+            ->getItem(Utils::availableMessagesCacheKey($applicationId));
 
-        $this->availableEvents->save($availableEvent);
+        $availableEvents = $availableEventsCacheItem->get() ?? [];
+
+        $availableEvents[self::uniqueKey($event['allSequence'])] = $event;
+
+        $availableEventsCacheItem->set($availableEvents);
+
+        $this->cache->save($availableEventsCacheItem);
     }
 
-    public function fetchOne(): ?array
+    public function fetchOne(ApplicationId $applicationId): ?array
     {
-        foreach ($this->availableEvents->getItems() as $cacheItem) {
-            /** @var CacheItemInterface $cacheItem */
-            $event = $cacheItem->get();
+        $availableEventsCacheItem = $this
+            ->cache
+            ->getItem(Utils::availableMessagesCacheKey($applicationId));
 
-            $this->availableEvents->deleteItem(self::uniqueKey($event['allSequence']));
+        $availableEvents = $availableEventsCacheItem->get();
 
-            return $event;
+        foreach ($availableEventsCacheItem->get() as $availableEvent) {
+            unset($availableEvents[$availableEvent['allSequence']]);
+
+            $availableEventsCacheItem->set($availableEvents);
+
+            $this->cache->save($availableEventsCacheItem);
+
+            return $availableEvent;
         }
 
         return null;
@@ -39,7 +53,7 @@ final readonly class CachedAvailableEvents implements AvailableEvents
     public function remove(int $index): void
     {
         $this
-            ->availableEvents
+            ->cache
             ->deleteItem(self::uniqueKey($index));
     }
 

@@ -15,15 +15,15 @@ final readonly class CachedInFlightEvents implements InFlightEvents
 {
     private const string IN_FLIGHT_CATCHUP_REQUEST_CHECKPOINT = 'checkpoint';
 
-    public function __construct(private CacheItemPoolInterface $inFlightMessages) {}
+    public function __construct(private CacheItemPoolInterface $cache) {}
 
     public function forApplicationIdAndStreamId(
         ApplicationId $applicationId,
         StreamId $streamId
     ): iterable {
         return $this
-            ->inFlightMessages
-            ->getItem(Utils::cacheKey($applicationId, $streamId))
+            ->cache
+            ->getItem(Utils::inFlightCacheKey($applicationId, $streamId))
             ->get() ?? [];
     }
 
@@ -32,26 +32,26 @@ final readonly class CachedInFlightEvents implements InFlightEvents
         StreamId $streamId
     ): bool {
         return $this
-            ->inFlightMessages
-            ->hasItem(Utils::cacheKey($applicationId, $streamId));
+            ->cache
+            ->hasItem(Utils::inFlightCacheKey($applicationId, $streamId));
     }
 
     public function addEventForApplicationId(ApplicationId $applicationId, array $event): void
     {
         $streamId = StreamId::fromString($event['stream']);
 
-        $inFlightKey = Utils::cacheKey($applicationId, $streamId);
+        $inFlightKey = Utils::inFlightCacheKey($applicationId, $streamId);
 
         $events = $this->forApplicationIdAndStreamId($applicationId, $streamId);
 
         $events[$event['number']] = $event;
 
         $inFlightItem = $this
-            ->inFlightMessages
+            ->cache
             ->getItem($inFlightKey)
             ->set($events);
 
-        $this->inFlightMessages->save($inFlightItem);
+        $this->cache->save($inFlightItem);
 
         $this->setInFlightCheckpoint(Checkpoint::fromInt($event['allSequence']));
     }
@@ -60,7 +60,7 @@ final readonly class CachedInFlightEvents implements InFlightEvents
     {
         $streamId = StreamId::fromString($event['stream']);
 
-        $inFlightKey = Utils::cacheKey($applicationId, $streamId);
+        $inFlightKey = Utils::inFlightCacheKey($applicationId, $streamId);
 
         $events = $this->forApplicationIdAndStreamId($applicationId, $streamId);
 
@@ -68,16 +68,16 @@ final readonly class CachedInFlightEvents implements InFlightEvents
 
         if (empty($events)) {
             $this
-                ->inFlightMessages
+                ->cache
                 ->deleteItem($inFlightKey);
 
             return;
         }
 
-        $updatedEvents = $this->inFlightMessages->getItem($inFlightKey);
+        $updatedEvents = $this->cache->getItem($inFlightKey);
 
         $this
-            ->inFlightMessages
+            ->cache
             ->save(
                 $updatedEvents->set($events)
             );
@@ -86,7 +86,7 @@ final readonly class CachedInFlightEvents implements InFlightEvents
     public function inFlightCheckpoint(): ?Checkpoint
     {
         $checkpoint = $this
-            ->inFlightMessages
+            ->cache
             ->getItem(self::IN_FLIGHT_CATCHUP_REQUEST_CHECKPOINT)
             ->get();
 
@@ -98,10 +98,10 @@ final readonly class CachedInFlightEvents implements InFlightEvents
     public function setInFlightCheckpoint(Checkpoint $checkpoint): void
     {
         $checkpointCacheItem = $this
-            ->inFlightMessages
+            ->cache
             ->getItem(self::IN_FLIGHT_CATCHUP_REQUEST_CHECKPOINT)
             ->set($checkpoint->toInt());
 
-        $this->inFlightMessages->save($checkpointCacheItem);
+        $this->cache->save($checkpointCacheItem);
     }
 }

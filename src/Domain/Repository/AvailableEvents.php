@@ -2,11 +2,13 @@
 
 namespace PearTreeWeb\EventSourcerer\Client\Domain\Repository;
 
+use PearTreeWebLtd\EventSourcererMessageUtilities\Model\ApplicationId;
+
 interface AvailableEvents
 {
-    public function add(array $event): void;
+    public function add(ApplicationId $applicationId, array $event): void;
 
-    public function fetchOne(): ?array;
+    public function fetchOne(ApplicationId $applicationId): ?array;
 
     public function remove(int $index): void;
 }
