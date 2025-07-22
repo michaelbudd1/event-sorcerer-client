@@ -38,7 +38,7 @@ final readonly class CachedAvailableEvents implements AvailableEvents
         $availableEvents = $availableEventsCacheItem->get();
 
         foreach ($availableEventsCacheItem->get() as $availableEvent) {
-            unset($availableEvents[$availableEvent['allSequence']]);
+            unset($availableEvents[self::uniqueKey($availableEvent['allSequence'])]);
 
             $availableEventsCacheItem->set($availableEvents);
 
