@@ -14,10 +14,12 @@ final readonly class CachedAvailableEvents implements AvailableEvents
 
     public function add(array $event): void
     {
-        $this
+        $availableEvent = $this
             ->availableEvents
             ->getItem(self::uniqueKey($event['allSequence']))
             ->set($event);
+
+        $this->availableEvents->save($availableEvent);
     }
 
     public function fetchOne(): ?array
