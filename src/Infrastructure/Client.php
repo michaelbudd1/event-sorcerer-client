@@ -68,9 +68,9 @@ final readonly class Client
                 );
 
                 $connection->on('data', function (string $events) use ($applicationId, $connection, $eventHandler)  {
-                    $this->addEventsForProcessing($events);
+                    $this->addEventsForProcessing($applicationId, $events);
 
-                    while ($decodedEvent = $this->availableEvents->fetchOne()) {
+                    while ($decodedEvent = $this->availableEvents->fetchOne($applicationId)) {
                         dd($decodedEvent);
                         $streamId = StreamId::fromString($decodedEvent['stream']);
 
@@ -174,10 +174,10 @@ final readonly class Client
         return false;
     }
 
-    private function addEventsForProcessing(string $events): void
+    private function addEventsForProcessing(ApplicationId $applicationId, string $events): void
     {
         foreach (\array_filter(explode(MessageMarkup::NewEventParser->value, $events)) as $event) {
-            $this->availableEvents->add(self::decodeEvent($event));
+            $this->availableEvents->add($applicationId, self::decodeEvent($event));
         }
     }
 }
