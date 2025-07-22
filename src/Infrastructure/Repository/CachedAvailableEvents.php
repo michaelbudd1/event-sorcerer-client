@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace PearTreeWeb\EventSourcerer\Client\Infrastructure\Repository;
 
 use PearTreeWeb\EventSourcerer\Client\Domain\Repository\AvailableEvents;
+use Psr\Cache\CacheItemInterface;
 use Psr\Cache\CacheItemPoolInterface;
 
 final readonly class CachedAvailableEvents implements AvailableEvents
@@ -21,9 +22,14 @@ final readonly class CachedAvailableEvents implements AvailableEvents
 
     public function fetchOne(): ?array
     {
-        $items = $this->availableEvents->getItems();
+        foreach ($this->availableEvents->getItems() as $cacheItem) {
+            /** @var CacheItemInterface $cacheItem */
+            $event = $cacheItem->get();
 
-        dd($items);
+            $this->availableEvents->deleteItem(self::uniqueKey($event['allSequence']));
+
+            return $event;
+        }
     }
 
     public function remove(int $index): void

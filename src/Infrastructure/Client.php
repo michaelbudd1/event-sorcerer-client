@@ -71,8 +71,7 @@ final readonly class Client
                     $this->addEventsForProcessing($events);
 
                     while ($decodedEvent = $this->availableEvents->fetchOne()) {
-//
-//                    foreach ($this->catchupEvents-> as $parsedEvent) {
+                        dd($decodedEvent);
                         $streamId = StreamId::fromString($decodedEvent['stream']);
 
                         if (
