@@ -143,6 +143,7 @@ final readonly class Client
         self::acknowledgeEvent($connection, $applicationId, $decodedEvent);
 
         $this->inFlightEvents->removeEventForApplicationId($applicationId, $decodedEvent);
+        $this->availableEvents->remove($decodedEvent['allSequence']);
     }
 
     private function inFlightEvents(ApplicationId $applicationId, StreamId $streamId): iterable
