@@ -31,9 +31,13 @@ final readonly class CachedAvailableEvents implements AvailableEvents
 
     public function fetchOne(ApplicationId $applicationId): ?array
     {
-        $availableEvents = $this->availableMessages($applicationId)->get();
+        $availableEvents = $this->availableMessages($applicationId)->get() ?? [];
 
-        return array_pop($availableEvents);
+        foreach ($availableEvents as $event) {
+            return $event;
+        }
+
+        return null;
     }
 
     private static function uniqueKey(int $allSequence): string
