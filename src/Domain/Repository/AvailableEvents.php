@@ -9,6 +9,4 @@ interface AvailableEvents
     public function add(ApplicationId $applicationId, array $event): void;
 
     public function fetchOne(ApplicationId $applicationId): ?array;
-
-    public function remove(int $index): void;
 }

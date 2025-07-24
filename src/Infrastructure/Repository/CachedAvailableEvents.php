@@ -31,15 +31,13 @@ final readonly class CachedAvailableEvents implements AvailableEvents
 
     public function fetchOne(ApplicationId $applicationId): ?array
     {
-        $availableEventsCacheItem = $this
-            ->cache
-            ->getItem(Utils::availableMessagesCacheKey($applicationId));
-
+        $availableEventsCacheItem = $this->availableMessages($applicationId);
         $availableEvents = $availableEventsCacheItem->get();
 
-        foreach ($availableEventsCacheItem->get() as $availableEvent) {
+        foreach ($availableEvents as $availableEvent) {
             unset($availableEvents[self::uniqueKey($availableEvent['allSequence'])]);
 
+            \Log::info('Available events now: ' . json_encode($availableEvents));
             $availableEventsCacheItem->set($availableEvents);
 
             $this->cache->save($availableEventsCacheItem);
@@ -50,15 +48,15 @@ final readonly class CachedAvailableEvents implements AvailableEvents
         return null;
     }
 
-    public function remove(int $index): void
-    {
-        $this
-            ->cache
-            ->deleteItem(self::uniqueKey($index));
-    }
-
     private static function uniqueKey(int $allSequence): string
     {
         return sprintf('event-%d', $allSequence);
+    }
+
+    private function availableMessages(ApplicationId $applicationId): CacheItemInterface
+    {
+        return $this
+            ->cache
+            ->getItem(Utils::availableMessagesCacheKey($applicationId));
     }
 }
