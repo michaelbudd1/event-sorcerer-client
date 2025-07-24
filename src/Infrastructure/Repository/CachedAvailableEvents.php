@@ -35,9 +35,6 @@ final readonly class CachedAvailableEvents implements AvailableEvents
         $availableEvents = $availableEventsCacheItem->get();
 
         foreach ($availableEvents as $availableEvent) {
-            unset($availableEvents[self::uniqueKey($availableEvent['allSequence'])]);
-
-            \Log::info('Available events now: ' . json_encode($availableEvents));
             $availableEventsCacheItem->set($availableEvents);
 
             $this->cache->save($availableEventsCacheItem);
@@ -58,5 +55,17 @@ final readonly class CachedAvailableEvents implements AvailableEvents
         return $this
             ->cache
             ->getItem(Utils::availableMessagesCacheKey($applicationId));
+    }
+
+    public function remove(ApplicationId $applicationId, int $allSequenceIndex): void
+    {
+        $itemsCache = $this->availableMessages($applicationId);
+        $events = $itemsCache->get();
+
+        unset($events[$allSequenceIndex]);
+
+        $itemsCache->set($events);
+
+        $this->cache->save($itemsCache);
     }
 }
