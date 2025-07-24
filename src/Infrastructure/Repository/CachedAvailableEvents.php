@@ -31,18 +31,9 @@ final readonly class CachedAvailableEvents implements AvailableEvents
 
     public function fetchOne(ApplicationId $applicationId): ?array
     {
-        $availableEventsCacheItem = $this->availableMessages($applicationId);
-        $availableEvents = $availableEventsCacheItem->get();
+        $availableEvents = $this->availableMessages($applicationId)->get();
 
-        foreach ($availableEvents as $availableEvent) {
-            $availableEventsCacheItem->set($availableEvents);
-
-            $this->cache->save($availableEventsCacheItem);
-
-            return $availableEvent;
-        }
-
-        return null;
+        return array_pop($availableEvents);
     }
 
     private static function uniqueKey(int $allSequence): string
@@ -62,7 +53,7 @@ final readonly class CachedAvailableEvents implements AvailableEvents
         $itemsCache = $this->availableMessages($applicationId);
         $events = $itemsCache->get();
 
-        unset($events[$allSequenceIndex]);
+        unset($events[self::uniqueKey($allSequenceIndex)]);
 
         $itemsCache->set($events);
 
