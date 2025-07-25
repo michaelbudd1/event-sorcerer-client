@@ -3,6 +3,7 @@
 namespace PearTreeWeb\EventSourcerer\Client\Domain\Repository;
 
 use PearTreeWebLtd\EventSourcererMessageUtilities\Model\ApplicationId;
+use Psr\Cache\CacheItemInterface;
 
 interface AvailableEvents
 {
@@ -10,5 +11,5 @@ interface AvailableEvents
 
     public function fetchOne(ApplicationId $applicationId): ?array;
 
-    public function remove(ApplicationId $applicationId, int $allSequenceIndex): void;
+    public function remove(CacheItemInterface $availableEvents, int $allSequenceIndex): void;
 }

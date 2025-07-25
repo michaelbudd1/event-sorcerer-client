@@ -22,7 +22,7 @@ final readonly class CachedAvailableEvents implements AvailableEvents
 
         $availableEvents = $availableEventsCacheItem->get() ?? [];
 
-        $availableEvents[self::uniqueKey($event['allSequence'])] = $event;
+        $availableEvents[$event['allSequence']] = $event;
 
         $availableEventsCacheItem->set($availableEvents);
 
@@ -31,18 +31,17 @@ final readonly class CachedAvailableEvents implements AvailableEvents
 
     public function fetchOne(ApplicationId $applicationId): ?array
     {
-        $availableEvents = $this->availableMessages($applicationId)->get() ?? [];
+        $availableEventsCache = $this->availableMessages($applicationId);
+
+        $availableEvents = $availableEventsCache->get() ?? [];
 
         foreach ($availableEvents as $event) {
+            $this->remove($availableEventsCache, $event['allSequence']);
+
             return $event;
         }
 
         return null;
-    }
-
-    private static function uniqueKey(int $allSequence): string
-    {
-        return sprintf('event-%d', $allSequence);
     }
 
     private function availableMessages(ApplicationId $applicationId): CacheItemInterface
@@ -52,15 +51,14 @@ final readonly class CachedAvailableEvents implements AvailableEvents
             ->getItem(Utils::availableMessagesCacheKey($applicationId));
     }
 
-    public function remove(ApplicationId $applicationId, int $allSequenceIndex): void
+    public function remove(CacheItemInterface $availableEvents, int $allSequenceIndex): void
     {
-        $itemsCache = $this->availableMessages($applicationId);
-        $events = $itemsCache->get();
+        $events = $availableEvents->get() ?? [];
 
-        unset($events[self::uniqueKey($allSequenceIndex)]);
+        $events = array_splice($events, $allSequenceIndex, 1);
 
-        $itemsCache->set($events);
+        $availableEvents->set($events);
 
-        $this->cache->save($itemsCache);
+        $this->cache->save($availableEvents);
     }
 }
