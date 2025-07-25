@@ -46,7 +46,7 @@ final readonly class Client
         );
     }
 
-    public function fetchMessages(callable $eventHandler): void
+    public function listenForMessages(callable $eventHandler): void
     {
         if (null === $this->connection) {
             throw CannotFetchMessages::beforeConnectionHasBeenEstablished();
@@ -70,28 +70,33 @@ final readonly class Client
                 $connection->on('data', function (string $events) use ($applicationId, $connection, $eventHandler)  {
                     $this->addEventsForProcessing($applicationId, $events);
 
-                    while ($decodedEvent = $this->availableEvents->fetchOne($applicationId)) {
-                        $streamId = StreamId::fromString($decodedEvent['stream']);
-
-                        if ($this->isAlreadyBeingProcessedByAnotherProcess($decodedEvent)) {
-                            continue;
-                        }
-
-                        if ($this->inFlightEvents->containsEventsForApplicationIdAndStreamId($applicationId, $streamId)) {
-                            $this->addInFlightEvent($applicationId, $decodedEvent);
-
-                            continue;
-                        }
-
-                        $this->addInFlightEvent($applicationId, $decodedEvent);
-                        $this->processEvent($connection, $applicationId, $decodedEvent, $eventHandler);
-
-                        foreach ($this->inFlightEvents($applicationId, $streamId) as $inFlightEvent) {
-                            $this->processEvent($connection, $applicationId, $inFlightEvent, $eventHandler);
-                        }
-                    }
+//                    while ($decodedEvent = $this->availableEvents->fetchOne($applicationId)) {
+//                        $streamId = StreamId::fromString($decodedEvent['stream']);
+//
+//                        if ($this->isAlreadyBeingProcessedByAnotherProcess($decodedEvent)) {
+//                            continue;
+//                        }
+//
+//                        if ($this->inFlightEvents->containsEventsForApplicationIdAndStreamId($applicationId, $streamId)) {
+//                            $this->addInFlightEvent($applicationId, $decodedEvent);
+//
+//                            continue;
+//                        }
+//
+//                        $this->addInFlightEvent($applicationId, $decodedEvent);
+//                        $this->processEvent($connection, $applicationId, $decodedEvent, $eventHandler);
+//
+//                        foreach ($this->inFlightEvents($applicationId, $streamId) as $inFlightEvent) {
+//                            $this->processEvent($connection, $applicationId, $inFlightEvent, $eventHandler);
+//                        }
+//                    }
                 });
             });
+    }
+
+    public function fetchOneMessage(ApplicationId $applicationId): ?array
+    {
+        return null;
     }
 
     private static function decodeEvent(string $event): array
