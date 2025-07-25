@@ -55,9 +55,9 @@ final readonly class CachedAvailableEvents implements AvailableEvents
     {
         $events = $availableEvents->get() ?? [];
 
-        $events = array_splice($events, $allSequenceIndex, 1);
+        $events[$allSequenceIndex] = null;
 
-        $availableEvents->set($events);
+        $availableEvents->set(\array_filter($events));
 
         $this->cache->save($availableEvents);
     }
