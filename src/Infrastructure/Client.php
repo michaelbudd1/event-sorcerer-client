@@ -71,10 +71,14 @@ final readonly class Client
 //                    foreach (\array_filter(explode(MessageMarkup::NewEventParser->value, $events)) as $event) {
 //                        $eventHandler(self::decodeEvent($event));
 //                    }
-
                     $this->addEventsForProcessing($applicationId, $events);
+                });
+            });
+    }
 
-//                    while ($decodedEvent = $this->availableEvents->fetchOne($applicationId)) {
+    public function fetchOneMessage(ApplicationId $applicationId): ?array
+    {
+        //                    while ($decodedEvent = $this->availableEvents->fetchOne($applicationId)) {
 //                        $streamId = StreamId::fromString($decodedEvent['stream']);
 //
 //                        if ($this->isAlreadyBeingProcessedByAnotherProcess($decodedEvent)) {
@@ -94,12 +98,7 @@ final readonly class Client
 //                            $this->processEvent($connection, $applicationId, $inFlightEvent, $eventHandler);
 //                        }
 //                    }
-                });
-            });
-    }
 
-    public function fetchOneMessage(ApplicationId $applicationId): ?array
-    {
         return $this->availableEvents->fetchOne($applicationId);
     }
 
