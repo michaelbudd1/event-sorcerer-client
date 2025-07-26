@@ -68,11 +68,11 @@ final readonly class Client
                 );
 
                 $connection->on('data', function (string $events) use ($applicationId, $connection, $eventHandler)  {
-                    foreach (\array_filter(explode(MessageMarkup::NewEventParser->value, $events)) as $event) {
-                        $eventHandler(self::decodeEvent($event));
-                    }
+//                    foreach (\array_filter(explode(MessageMarkup::NewEventParser->value, $events)) as $event) {
+//                        $eventHandler(self::decodeEvent($event));
+//                    }
 
-//                    $this->addEventsForProcessing($applicationId, $events);
+                    $this->addEventsForProcessing($applicationId, $events);
 
 //                    while ($decodedEvent = $this->availableEvents->fetchOne($applicationId)) {
 //                        $streamId = StreamId::fromString($decodedEvent['stream']);
