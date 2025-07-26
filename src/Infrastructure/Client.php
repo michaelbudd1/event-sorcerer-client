@@ -100,8 +100,7 @@ final readonly class Client
 
     public function fetchOneMessage(ApplicationId $applicationId): ?array
     {
-        return ['testing' => 123];
-        return null;
+        return $this->availableEvents->fetchOne($applicationId);
     }
 
     private static function decodeEvent(string $event): array
