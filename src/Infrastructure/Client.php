@@ -105,9 +105,13 @@ final readonly class Client
     private static function decodeEvent(string $event): array
     {
         try {
+            $regex = sprintf('/%s {.+}/', MessageType::NewEvent->value);
+
+            preg_match($regex, $event, $matches);
+
             return json_decode(
                 trim(
-                    str_replace(MessageType::NewEvent->value, '', $event)
+                    str_replace(MessageType::NewEvent->value, '', $matches[0])
                 ),
                 true,
                 512,
