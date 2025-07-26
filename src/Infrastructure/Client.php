@@ -102,12 +102,16 @@ final readonly class Client
         return $this->availableEvents->fetchOne($applicationId);
     }
 
-    private static function decodeEvent(string $event): array
+    private static function decodeEvent(string $event): ?array
     {
         try {
             $regex = sprintf('/%s {.+}/', MessageType::NewEvent->value);
 
             preg_match($regex, $event, $matches);
+
+            if (!isset($matches[0])) {
+                return null;
+            }
 
             return json_decode(
                 trim(
@@ -180,7 +184,13 @@ final readonly class Client
     private function addEventsForProcessing(ApplicationId $applicationId, string $events): void
     {
         foreach (\array_filter(explode(MessageMarkup::NewEventParser->value, $events)) as $event) {
-            $this->availableEvents->add($applicationId, self::decodeEvent($event));
+            $decodedEvent = self::decodeEvent($event);
+
+            if (null === $decodedEvent) {
+                continue;
+            }
+
+            $this->availableEvents->add($applicationId, $decodedEvent);
         }
     }
 }
