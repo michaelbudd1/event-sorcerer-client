@@ -67,10 +67,7 @@ final readonly class Client
                     )
                 );
 
-                $connection->on('data', function (string $events) use ($applicationId, $connection, $eventHandler)  {
-//                    foreach (\array_filter(explode(MessageMarkup::NewEventParser->value, $events)) as $event) {
-//                        $eventHandler(self::decodeEvent($event));
-//                    }
+                $connection->on('data', function (string $events) use ($applicationId)  {
                     $this->addEventsForProcessing($applicationId, $events);
                 });
             });
