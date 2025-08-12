@@ -104,18 +104,19 @@ final readonly class Client
     }
 
     public function acknowledgeEvent(
-        ApplicationId $applicationId,
-        array $decodedEvent
+        StreamId $stream,
+        Checkpoint $streamCheckpoint,
+        Checkpoint $allStreamCheckpoint
     ): void {
         $this
             ->connection
-            ->then(function (ConnectionInterface $connection) use ($applicationId, $decodedEvent) {
+            ->then(function (ConnectionInterface $connection) use ($stream, $streamCheckpoint, $allStreamCheckpoint) {
                 $connection->write(
                     CreateMessage::forAcknowledgement(
-                        StreamId::fromString($decodedEvent['stream']),
-                        $applicationId,
-                        Checkpoint::fromInt($decodedEvent['number']),
-                        Checkpoint::fromInt($decodedEvent['allSequence'])
+                        $stream,
+                        ApplicationId::fromString($this->config->eventSourcererApplicationId),
+                        $streamCheckpoint,
+                        $allStreamCheckpoint
                     )
                 );
             });
