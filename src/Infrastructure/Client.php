@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace PearTreeWeb\EventSourcerer\Client\Infrastructure;
 
 use PearTreeWeb\EventSourcerer\Client\Domain\Repository\AvailableEvents;
-use PearTreeWeb\EventSourcerer\Client\Domain\Repository\InFlightEvents;
 use PearTreeWeb\EventSourcerer\Client\Infrastructure\Exception\CannotFetchMessages;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Model\ApplicationId;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Model\Checkpoint;
@@ -24,7 +23,6 @@ final readonly class Client
      */
     public function __construct(
         private Config $config,
-        private InFlightEvents $inFlightEvents,
         private AvailableEvents $availableEvents,
         private ?PromiseInterface $connection = null
     ) {}
@@ -33,7 +31,6 @@ final readonly class Client
     {
         return new self(
             $this->config,
-            $this->inFlightEvents,
             $this->availableEvents,
             (new Connector())
                 ->connect(
@@ -46,7 +43,7 @@ final readonly class Client
         );
     }
 
-    public function listenForMessages(callable $eventHandler): void
+    public function listenForMessages(): void
     {
         if (null === $this->connection) {
             throw CannotFetchMessages::beforeConnectionHasBeenEstablished();
@@ -54,7 +51,7 @@ final readonly class Client
 
         $this
             ->connection
-            ->then(function (ConnectionInterface $connection) use ($eventHandler) {
+            ->then(function (ConnectionInterface $connection) {
                 $applicationId = ApplicationId::fromString($this->config->eventSourcererApplicationId);
 
                 $connection->write(CreateMessage::forProvidingIdentity($applicationId));
@@ -62,8 +59,7 @@ final readonly class Client
                 $connection->write(
                     CreateMessage::forCatchupRequest(
                         StreamId::fromString('*'),
-                        $applicationId,
-                        $this->inFlightEvents->inFlightCheckpoint()
+                        $applicationId
                     )
                 );
 
@@ -75,27 +71,6 @@ final readonly class Client
 
     public function fetchOneMessage(ApplicationId $applicationId): ?array
     {
-        //                    while ($decodedEvent = $this->availableEvents->fetchOne($applicationId)) {
-//                        $streamId = StreamId::fromString($decodedEvent['stream']);
-//
-//                        if ($this->isAlreadyBeingProcessedByAnotherProcess($decodedEvent)) {
-//                            continue;
-//                        }
-//
-//                        if ($this->inFlightEvents->containsEventsForApplicationIdAndStreamId($applicationId, $streamId)) {
-//                            $this->addInFlightEvent($applicationId, $decodedEvent);
-//
-//                            continue;
-//                        }
-//
-//                        $this->addInFlightEvent($applicationId, $decodedEvent);
-//                        $this->processEvent($connection, $applicationId, $decodedEvent, $eventHandler);
-//
-//                        foreach ($this->inFlightEvents($applicationId, $streamId) as $inFlightEvent) {
-//                            $this->processEvent($connection, $applicationId, $inFlightEvent, $eventHandler);
-//                        }
-//                    }
-
         return $this->availableEvents->fetchOne($applicationId);
     }
 
@@ -140,11 +115,6 @@ final readonly class Client
         );
     }
 
-    private function addInFlightEvent(ApplicationId $applicationId, array $decodedEvent): void
-    {
-        $this->inFlightEvents->addEventForApplicationId($applicationId, $decodedEvent);
-    }
-
     private function processEvent(
         ConnectionInterface $connection,
         ApplicationId $applicationId,
@@ -158,24 +128,12 @@ final readonly class Client
         $this->inFlightEvents->removeEventForApplicationId($applicationId, $decodedEvent);
     }
 
-    private function inFlightEvents(ApplicationId $applicationId, StreamId $streamId): iterable
-    {
-        return $this->inFlightEvents->forApplicationIdAndStreamId($applicationId, $streamId);
-    }
-
     private static function jsonDecodeErrorMessage(string $parsedEvent): string
     {
         return sprintf(
             'An error occurred attempting to decode message: %s',
             $parsedEvent
         );
-    }
-
-    private function isAlreadyBeingProcessedByAnotherProcess(array $decodedEvent): bool
-    {
-        return $this->inFlightEvents->inFlightCheckpoint()?->isGreaterThan(
-            Checkpoint::fromInt($decodedEvent['allSequence'])
-        ) ?? false;
     }
 
     private function addEventsForProcessing(ApplicationId $applicationId, string $events): void
