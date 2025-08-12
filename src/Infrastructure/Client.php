@@ -12,6 +12,7 @@ use PearTreeWebLtd\EventSourcererMessageUtilities\Model\MessageMarkup;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Model\MessageType;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Model\StreamId;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Service\CreateMessage;
+use React\Promise\Promise;
 use React\Promise\PromiseInterface;
 use React\Socket\ConnectionInterface;
 use React\Socket\Connector;
@@ -66,6 +67,8 @@ final readonly class Client
                 $connection->on('data', function (string $events) use ($applicationId)  {
                     $this->addEventsForProcessing($applicationId, $events);
                 });
+
+                return new Promise(static fn () => $connection);
             });
     }
 
@@ -100,33 +103,36 @@ final readonly class Client
         }
     }
 
-    private static function acknowledgeEvent(
-        ConnectionInterface $connection,
+    public function acknowledgeEvent(
         ApplicationId $applicationId,
         array $decodedEvent
     ): void {
-        $connection->write(
-            CreateMessage::forAcknowledgement(
-                StreamId::fromString($decodedEvent['stream']),
-                $applicationId,
-                Checkpoint::fromInt($decodedEvent['number']),
-                Checkpoint::fromInt($decodedEvent['allSequence'])
-            )
-        );
+        $this
+            ->connection
+            ->then(function (ConnectionInterface $connection) use ($applicationId, $decodedEvent) {
+                $connection->write(
+                    CreateMessage::forAcknowledgement(
+                        StreamId::fromString($decodedEvent['stream']),
+                        $applicationId,
+                        Checkpoint::fromInt($decodedEvent['number']),
+                        Checkpoint::fromInt($decodedEvent['allSequence'])
+                    )
+                );
+            });
     }
 
-    private function processEvent(
-        ConnectionInterface $connection,
-        ApplicationId $applicationId,
-        array $decodedEvent,
-        callable $eventHandler
-    ): void {
-        $eventHandler($decodedEvent);
-
-        self::acknowledgeEvent($connection, $applicationId, $decodedEvent);
-
-        $this->inFlightEvents->removeEventForApplicationId($applicationId, $decodedEvent);
-    }
+//    private function processEvent(
+//        ConnectionInterface $connection,
+//        ApplicationId $applicationId,
+//        array $decodedEvent,
+//        callable $eventHandler
+//    ): void {
+//        $eventHandler($decodedEvent);
+//
+//        self::acknowledgeEvent($connection, $applicationId, $decodedEvent);
+//
+//        $this->inFlightEvents->removeEventForApplicationId($applicationId, $decodedEvent);
+//    }
 
     private static function jsonDecodeErrorMessage(string $parsedEvent): string
     {
