@@ -122,19 +122,6 @@ final readonly class Client
             });
     }
 
-//    private function processEvent(
-//        ConnectionInterface $connection,
-//        ApplicationId $applicationId,
-//        array $decodedEvent,
-//        callable $eventHandler
-//    ): void {
-//        $eventHandler($decodedEvent);
-//
-//        self::acknowledgeEvent($connection, $applicationId, $decodedEvent);
-//
-//        $this->inFlightEvents->removeEventForApplicationId($applicationId, $decodedEvent);
-//    }
-
     private static function jsonDecodeErrorMessage(string $parsedEvent): string
     {
         return sprintf(
