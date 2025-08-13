@@ -55,7 +55,7 @@ final readonly class Client
             ->then(function (ConnectionInterface $connection) {
                 $applicationId = ApplicationId::fromString($this->config->eventSourcererApplicationId);
 
-                $connection->write(CreateMessage::forProvidingIdentity($applicationId));
+                $connection->write(CreateMessage::forProvidingIdentity($applicationId, $this->config->applicationType));
 
                 $connection->write(
                     CreateMessage::forCatchupRequest(
