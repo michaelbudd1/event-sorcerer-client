@@ -61,4 +61,9 @@ final readonly class CachedAvailableEvents implements AvailableEvents
 
         $this->cache->save($availableEvents);
     }
+
+    public function count(ApplicationId $applicationId): int
+    {
+        return count($this->availableMessages($applicationId)->get());
+    }
 }

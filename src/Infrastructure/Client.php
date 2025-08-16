@@ -44,6 +44,11 @@ final readonly class Client
         );
     }
 
+    public function availableEventsCount(ApplicationId $applicationId): int
+    {
+        return $this->availableEvents->count($applicationId);
+    }
+
     public function listenForMessages(): void
     {
         if (null === $this->connection) {

@@ -12,4 +12,6 @@ interface AvailableEvents
     public function fetchOne(ApplicationId $applicationId): ?array;
 
     public function remove(CacheItemInterface $availableEvents, int $allSequenceIndex): void;
+
+    public function count(ApplicationId $applicationId): int;
 }
