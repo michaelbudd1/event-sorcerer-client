@@ -8,6 +8,8 @@ use PearTreeWeb\EventSourcerer\Client\Domain\Repository\AvailableEvents;
 use PearTreeWeb\EventSourcerer\Client\Infrastructure\Exception\CannotFetchMessages;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Model\ApplicationId;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Model\Checkpoint;
+use PearTreeWebLtd\EventSourcererMessageUtilities\Model\EventName;
+use PearTreeWebLtd\EventSourcererMessageUtilities\Model\EventVersion;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Model\MessageMarkup;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Model\MessageType;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Model\StreamId;
@@ -127,12 +129,23 @@ final readonly class Client
             });
     }
 
-    public function writeNewEvent(array $payload): void
-    {
+    public function writeNewEvent(
+        StreamId $streamId,
+        EventName $eventName,
+        EventVersion $eventVersion,
+        array $payload
+    ): void {
         $this
             ->connection
-            ->then(function (ConnectionInterface $connection) use ($payload) {
-                $connection->write(CreateMessage::forWriteNewEvent($payload));
+            ->then(function (ConnectionInterface $connection) use ($streamId, $eventName, $eventVersion, $payload) {
+                $connection->write(
+                    CreateMessage::forWriteNewEvent(
+                        $streamId,
+                        $eventName,
+                        $eventVersion,
+                        $payload
+                    )
+                );
             });
     }
 
