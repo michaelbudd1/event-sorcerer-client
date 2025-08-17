@@ -127,6 +127,15 @@ final readonly class Client
             });
     }
 
+    public function writeNewEvent(array $payload): void
+    {
+        $this
+            ->connection
+            ->then(function (ConnectionInterface $connection) use ($payload) {
+                $connection->write(CreateMessage::forWriteNewEvent($payload));
+            });
+    }
+
     private static function jsonDecodeErrorMessage(string $parsedEvent): string
     {
         return sprintf(
