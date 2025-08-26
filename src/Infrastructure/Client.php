@@ -138,7 +138,7 @@ final readonly class Client
         $this
             ->connection
             ->then(function (ConnectionInterface $connection) use ($streamId, $eventName, $eventVersion, $payload) {
-                $connection->write(
+                $connection->end(
                     CreateMessage::forWriteNewEvent(
                         $streamId,
                         $eventName,
