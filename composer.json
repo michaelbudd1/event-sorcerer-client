@@ -22,7 +22,7 @@
     "minimum-stability": "dev",
     "prefer-stable": true,
     "require": {
-        "symfony/http-client": "7.2.*",
+        "symfony/http-client": "7.3.*",
         "revolt/event-loop": "^1.0",
         "react/socket": "^1.16",
         "eventsourcerer/message-utilities": "dev-main",
