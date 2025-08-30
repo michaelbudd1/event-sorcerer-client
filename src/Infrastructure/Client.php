@@ -79,9 +79,11 @@ final readonly class Client
             });
     }
 
-    public function fetchOneMessage(ApplicationId $applicationId): ?array
+    public function fetchOneMessage(): ?array
     {
-        return $this->availableEvents->fetchOne($applicationId);
+        return $this->availableEvents->fetchOne(
+            ApplicationId::fromString($this->config->eventSourcererApplicationId)
+        );
     }
 
     private static function decodeEvent(string $event): ?array
