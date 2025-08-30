@@ -26,7 +26,6 @@
         "revolt/event-loop": "^1.0",
         "react/socket": "^1.16",
         "eventsourcerer/message-utilities": "dev-main",
-        "eventsourcerer/symfony-messenger-transport": "dev-main",
         "react/async": "^4.3.0",
         "psr/cache": "^3.0",
         "symfony/cache": "7.3.*"
