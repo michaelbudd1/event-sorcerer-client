@@ -120,7 +120,7 @@ final readonly class Client
         $this
             ->connection
             ->then(function (ConnectionInterface $connection) use ($stream, $streamCheckpoint, $allStreamCheckpoint) {
-                $connection->write(
+                $connection->end(
                     CreateMessage::forAcknowledgement(
                         $stream,
                         ApplicationId::fromString($this->config->eventSourcererApplicationId),
