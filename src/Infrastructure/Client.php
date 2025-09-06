@@ -108,7 +108,7 @@ final readonly class Client
         } catch (\JsonException) {
             echo self::jsonDecodeErrorMessage($event);
 
-            die;
+            return null;
         }
     }
 
