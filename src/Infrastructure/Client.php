@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace PearTreeWeb\EventSourcerer\Client\Infrastructure;
 
 use PearTreeWeb\EventSourcerer\Client\Domain\Repository\AvailableEvents;
+use PearTreeWeb\EventSourcerer\Client\Domain\Repository\InFlightEvents;
 use PearTreeWeb\EventSourcerer\Client\Infrastructure\Exception\CannotFetchMessages;
+use PearTreeWeb\EventSourcerer\Client\Infrastructure\Model\WorkerId;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Model\ApplicationId;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Model\Checkpoint;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Model\EventName;
@@ -27,6 +29,7 @@ final readonly class Client
     public function __construct(
         private Config $config,
         private AvailableEvents $availableEvents,
+        private InFlightEvents $inFlightEvents,
         private ?PromiseInterface $connection = null
     ) {}
 
@@ -35,6 +38,7 @@ final readonly class Client
         return new self(
             $this->config,
             $this->availableEvents,
+            $this->inFlightEvents,
             (new Connector())
                 ->connect(
                     sprintf(
@@ -79,10 +83,11 @@ final readonly class Client
             });
     }
 
-    public function fetchOneMessage(): ?array
+    public function fetchOneMessage(WorkerId $workerId): ?array
     {
         return $this->availableEvents->fetchOne(
-            ApplicationId::fromString($this->config->eventSourcererApplicationId)
+            ApplicationId::fromString($this->config->eventSourcererApplicationId),
+            $workerId
         );
     }
 

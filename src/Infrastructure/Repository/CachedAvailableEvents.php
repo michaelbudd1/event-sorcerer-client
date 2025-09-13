@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace PearTreeWeb\EventSourcerer\Client\Infrastructure\Repository;
 
 use PearTreeWeb\EventSourcerer\Client\Domain\Repository\AvailableEvents;
+use PearTreeWeb\EventSourcerer\Client\Infrastructure\Model\WorkerId;
 use PearTreeWeb\EventSourcerer\Client\Infrastructure\Service\Utils;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Model\ApplicationId;
 use Psr\Cache\CacheItemInterface;
@@ -29,13 +30,15 @@ final readonly class CachedAvailableEvents implements AvailableEvents
         $this->cache->save($availableEventsCacheItem);
     }
 
-    public function fetchOne(ApplicationId $applicationId): ?array
+    public function fetchOne(ApplicationId $applicationId, WorkerId $workerId): ?array
     {
         $availableEventsCache = $this->availableMessages($applicationId);
 
         $availableEvents = $availableEventsCache->get() ?? [];
 
         foreach ($availableEvents as $event) {
+            // check against in flight messages ... is another worker working on this stream?
+
             $this->remove($availableEventsCache, $event['allSequence']);
 
             return $event;
