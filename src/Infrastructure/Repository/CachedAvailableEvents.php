@@ -41,7 +41,7 @@ final readonly class CachedAvailableEvents implements AvailableEvents
         $availableEvents = $availableEventsCache->get() ?? [];
 
         foreach ($availableEvents as $event) {
-            $streamId = StreamId::fromString($event['streamId']);
+            $streamId = StreamId::fromString($event['stream']);
 
             if ($this->streamLocker->isLocked($streamId)) {
                 continue;
@@ -74,7 +74,7 @@ final readonly class CachedAvailableEvents implements AvailableEvents
 
         $this->cache->save($availableEvents);
 
-        $this->streamLocker->release(StreamId::fromString($event['streamId']));
+        $this->streamLocker->release(StreamId::fromString($event['stream']));
     }
 
     public function count(ApplicationId $applicationId): int
