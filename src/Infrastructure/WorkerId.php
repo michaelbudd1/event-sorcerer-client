@@ -10,4 +10,9 @@ use PearTreeWebLtd\EventSourcererMessageUtilities\Model\IsString;
 final class WorkerId implements IsString
 {
     use FulfilIsString;
+
+    public static function random(): self
+    {
+        return new self(uniqid('worker-', true));
+    }
 }
