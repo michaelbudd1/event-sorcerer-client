@@ -13,7 +13,10 @@ use Psr\Cache\CacheItemPoolInterface;
 
 final readonly class CachedAvailableEvents implements AvailableEvents
 {
-    public function __construct(private CacheItemPoolInterface $cache) {}
+    public function __construct(
+        private CacheItemPoolInterface $cache,
+        private InFlightEvents $inFlightEvents
+    ) {}
 
     public function add(ApplicationId $applicationId, array $event): void
     {
@@ -38,6 +41,7 @@ final readonly class CachedAvailableEvents implements AvailableEvents
 
         foreach ($availableEvents as $event) {
             // check against in flight messages ... is another worker working on this stream?
+
 
             $this->remove($availableEventsCache, $event['allSequence']);
 
