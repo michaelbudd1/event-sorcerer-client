@@ -81,11 +81,10 @@ final readonly class Client
             });
     }
 
-    public function fetchOneMessage(WorkerId $workerId): ?array
+    public function fetchOneMessage(): ?array
     {
         return $this->availableEvents->fetchOne(
-            ApplicationId::fromString($this->config->eventSourcererApplicationId),
-            $workerId
+            ApplicationId::fromString($this->config->eventSourcererApplicationId)
         );
     }
 

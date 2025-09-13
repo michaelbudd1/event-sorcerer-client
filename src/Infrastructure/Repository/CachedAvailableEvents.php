@@ -6,7 +6,6 @@ namespace PearTreeWeb\EventSourcerer\Client\Infrastructure\Repository;
 
 use PearTreeWeb\EventSourcerer\Client\Domain\Repository\AvailableEvents;
 use PearTreeWeb\EventSourcerer\Client\Domain\Repository\StreamLocker;
-use PearTreeWeb\EventSourcerer\Client\Infrastructure\Model\WorkerId;
 use PearTreeWeb\EventSourcerer\Client\Infrastructure\Service\Utils;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Model\ApplicationId;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Model\StreamId;
@@ -35,7 +34,7 @@ final readonly class CachedAvailableEvents implements AvailableEvents
         $this->cache->save($availableEventsCacheItem);
     }
 
-    public function fetchOne(ApplicationId $applicationId, WorkerId $workerId): ?array
+    public function fetchOne(ApplicationId $applicationId): ?array
     {
         $availableEventsCache = $this->availableMessages($applicationId);
 
