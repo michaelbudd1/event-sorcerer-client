@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace PearTreeWeb\EventSourcerer\Client\Infrastructure\Repository;
 
 use PearTreeWeb\EventSourcerer\Client\Domain\Repository\AvailableEvents;
+use PearTreeWeb\EventSourcerer\Client\Domain\Repository\StreamLocker;
 use PearTreeWeb\EventSourcerer\Client\Infrastructure\Model\WorkerId;
 use PearTreeWeb\EventSourcerer\Client\Infrastructure\Service\Utils;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Model\ApplicationId;
+use PearTreeWebLtd\EventSourcererMessageUtilities\Model\StreamId;
 use Psr\Cache\CacheItemInterface;
 use Psr\Cache\CacheItemPoolInterface;
 
@@ -15,7 +17,7 @@ final readonly class CachedAvailableEvents implements AvailableEvents
 {
     public function __construct(
         private CacheItemPoolInterface $cache,
-        private InFlightEvents $inFlightEvents
+        private StreamLocker $streamLocker
     ) {}
 
     public function add(ApplicationId $applicationId, array $event): void
@@ -40,10 +42,15 @@ final readonly class CachedAvailableEvents implements AvailableEvents
         $availableEvents = $availableEventsCache->get() ?? [];
 
         foreach ($availableEvents as $event) {
-            // check against in flight messages ... is another worker working on this stream?
+            $streamId = StreamId::fromString($event['streamId']);
 
+            if ($this->streamLocker->isLocked($streamId)) {
+                continue;
+            }
 
-            $this->remove($availableEventsCache, $event['allSequence']);
+            $this->streamLocker->lock($streamId);
+
+            $this->remove($availableEventsCache, $event);
 
             return $event;
         }
@@ -58,15 +65,17 @@ final readonly class CachedAvailableEvents implements AvailableEvents
             ->getItem(Utils::availableMessagesCacheKey($applicationId));
     }
 
-    public function remove(CacheItemInterface $availableEvents, int $allSequenceIndex): void
+    public function remove(CacheItemInterface $availableEvents, array $event): void
     {
         $events = $availableEvents->get() ?? [];
 
-        $events[$allSequenceIndex] = null;
+        $events[$event['allSequence']] = null;
 
         $availableEvents->set(\array_filter($events));
 
         $this->cache->save($availableEvents);
+
+        $this->streamLocker->release(StreamId::fromString($event['streamId']));
     }
 
     public function count(ApplicationId $applicationId): int

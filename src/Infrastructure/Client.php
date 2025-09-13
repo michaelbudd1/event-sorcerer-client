@@ -29,7 +29,6 @@ final readonly class Client
     public function __construct(
         private Config $config,
         private AvailableEvents $availableEvents,
-        private InFlightEvents $inFlightEvents,
         private ?PromiseInterface $connection = null
     ) {}
 
@@ -38,7 +37,6 @@ final readonly class Client
         return new self(
             $this->config,
             $this->availableEvents,
-            $this->inFlightEvents,
             (new Connector())
                 ->connect(
                     sprintf(
