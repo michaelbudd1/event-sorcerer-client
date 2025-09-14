@@ -2,7 +2,6 @@
 
 namespace PearTreeWeb\EventSourcerer\Client\Domain\Repository;
 
-use PearTreeWeb\EventSourcerer\Client\Infrastructure\Model\WorkerId;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Model\ApplicationId;
 use Psr\Cache\CacheItemInterface;
 
