@@ -5,9 +5,7 @@ declare(strict_types=1);
 namespace PearTreeWeb\EventSourcerer\Client\Infrastructure;
 
 use PearTreeWeb\EventSourcerer\Client\Domain\Repository\AvailableEvents;
-use PearTreeWeb\EventSourcerer\Client\Domain\Repository\InFlightEvents;
 use PearTreeWeb\EventSourcerer\Client\Infrastructure\Exception\CannotFetchMessages;
-use PearTreeWeb\EventSourcerer\Client\Infrastructure\Model\WorkerId;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Model\ApplicationId;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Model\Checkpoint;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Model\EventName;
@@ -48,9 +46,11 @@ final readonly class Client
         );
     }
 
-    public function availableEventsCount(ApplicationId $applicationId): int
+    public function availableEventsCount(): int
     {
-        return $this->availableEvents->count($applicationId);
+        return $this->availableEvents->count(
+            ApplicationId::fromString($this->config->eventSourcererApplicationId)
+        );
     }
 
     public function listenForMessages(): void
