@@ -53,6 +53,11 @@ final readonly class Client
         );
     }
 
+    public function hasEventsAvailable(): bool
+    {
+        return 0 !== $this->availableEventsCount();
+    }
+
     public function listenForMessages(): void
     {
         if (null === $this->connection) {
