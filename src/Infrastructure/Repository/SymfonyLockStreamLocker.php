@@ -24,7 +24,7 @@ final readonly class SymfonyLockStreamLocker implements StreamLocker
 
     public function lock(StreamId $streamId): void
     {
-        $this->fetchLock($streamId)->acquire();
+        $this->fetchLock($streamId)->acquire(true);
     }
 
     public function release(StreamId $streamId): void
