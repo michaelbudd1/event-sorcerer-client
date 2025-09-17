@@ -27,6 +27,10 @@ final readonly class CachedAvailableEvents implements AvailableEvents
 
         $availableEvents = $availableEventsCacheItem->get() ?? [];
 
+        if (self::firstCheckpointAvailable($availableEvents) > $event['allSequence']) {
+            return;
+        }
+
         $availableEvents[$event['allSequence']] = $event;
 
         $availableEventsCacheItem->set($availableEvents);
@@ -80,5 +84,10 @@ final readonly class CachedAvailableEvents implements AvailableEvents
     public function count(ApplicationId $applicationId): int
     {
         return count($this->availableMessages($applicationId)->get() ?? []);
+    }
+
+    private static function firstCheckpointAvailable(array $availableEvents): int
+    {
+        return min(array_keys($availableEvents));
     }
 }
