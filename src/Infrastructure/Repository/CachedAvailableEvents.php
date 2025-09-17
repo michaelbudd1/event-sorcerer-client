@@ -51,7 +51,9 @@ final readonly class CachedAvailableEvents implements AvailableEvents
                 continue;
             }
 
-            $this->streamLocker->lock($streamId);
+            if (!$this->streamLocker->lock($streamId)) {
+                continue;
+            }
 
             $this->remove($availableEventsCache, $event);
 
