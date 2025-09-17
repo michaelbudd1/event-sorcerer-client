@@ -27,6 +27,7 @@ final readonly class CachedAvailableEvents implements AvailableEvents
 
         $availableEvents = $availableEventsCacheItem->get() ?? [];
 
+        var_dump(self::firstCheckpointAvailable($availableEvents) > $event['allSequence']); die;
         if (!empty($availableEvents) && self::firstCheckpointAvailable($availableEvents) > $event['allSequence']) {
             return;
         }
