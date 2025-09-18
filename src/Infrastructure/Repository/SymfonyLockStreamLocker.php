@@ -14,9 +14,9 @@ final readonly class SymfonyLockStreamLocker implements StreamLocker
 {
     public function __construct(private LockFactory $lockFactory) {}
 
-    public static function create(): self
+    public static function create(?string $lockDir = null): self
     {
-        $store = new FlockStore();
+        $store = new FlockStore($lockDir);
         $factory = new LockFactory($store);
 
         return new self($factory);
