@@ -44,7 +44,7 @@ final readonly class CachedAvailableEvents implements AvailableEvents
 
         $availableEvents = $availableEventsCache->get() ?? [];
 
-        foreach ($availableEvents as $event) {
+        foreach ($availableEvents as $key => $event) {
             $streamId = StreamId::fromString($event['stream']);
 
             if ($this->streamLocker->isLocked($streamId)) {
@@ -70,13 +70,13 @@ final readonly class CachedAvailableEvents implements AvailableEvents
             ->getItem(Utils::availableMessagesCacheKey($applicationId));
     }
 
-    public function remove(CacheItemInterface $availableEvents, array $event): void
+    public function remove(CacheItemInterface $availableEvents, array $event, int $index): void
     {
         $events = $availableEvents->get() ?? [];
 
-        $events[$event['allSequence']] = null;
+        unset($events[$index]);
 
-        $availableEvents->set(\array_filter($events));
+        $availableEvents->set($events);
 
         $this->cache->save($availableEvents);
 
