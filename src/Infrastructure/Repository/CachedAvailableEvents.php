@@ -55,7 +55,7 @@ final readonly class CachedAvailableEvents implements AvailableEvents
                 continue;
             }
 
-            $this->remove($availableEventsCache, $event);
+            $this->remove($availableEventsCache, $event, $key);
 
             return $event;
         }
