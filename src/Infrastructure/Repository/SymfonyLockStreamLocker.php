@@ -8,15 +8,15 @@ use PearTreeWeb\EventSourcerer\Client\Domain\Repository\StreamLocker;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Model\StreamId;
 use Symfony\Component\Lock\LockFactory;
 use Symfony\Component\Lock\SharedLockInterface;
-use Symfony\Component\Lock\Store\FlockStore;
+use Symfony\Component\Lock\Store\SemaphoreStore;
 
 final readonly class SymfonyLockStreamLocker implements StreamLocker
 {
     public function __construct(private LockFactory $lockFactory) {}
 
-    public static function create(?string $lockDir = null): self
+    public static function create(): self
     {
-        $store = new FlockStore($lockDir);
+        $store = new SemaphoreStore();
         $factory = new LockFactory($store);
 
         return new self($factory);
