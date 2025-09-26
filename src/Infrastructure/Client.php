@@ -71,12 +71,14 @@ final readonly class Client
 
                 $connection->write(CreateMessage::forProvidingIdentity($applicationId, $this->config->applicationType));
 
-                $connection->write(
-                    CreateMessage::forCatchupRequest(
-                        StreamId::fromString('*'),
-                        $applicationId
-                    )
-                );
+                if (0 === $this->availableEventsCount()) {
+                    $connection->write(
+                        CreateMessage::forCatchupRequest(
+                            StreamId::fromString('*'),
+                            $applicationId
+                        )
+                    );
+                }
 
                 $connection->on('data', function (string $events) use ($applicationId)  {
                     $this->addEventsForProcessing($applicationId, $events);
@@ -136,6 +138,8 @@ final readonly class Client
                     )
                 );
             });
+
+        $this->availableEvents->ack($stream, $allStreamCheckpoint);
     }
 
     public function writeNewEvent(

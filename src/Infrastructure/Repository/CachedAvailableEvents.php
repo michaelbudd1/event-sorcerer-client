@@ -8,6 +8,7 @@ use PearTreeWeb\EventSourcerer\Client\Domain\Repository\AvailableEvents;
 use PearTreeWeb\EventSourcerer\Client\Domain\Repository\StreamLocker;
 use PearTreeWeb\EventSourcerer\Client\Infrastructure\Service\Utils;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Model\ApplicationId;
+use PearTreeWebLtd\EventSourcererMessageUtilities\Model\Checkpoint;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Model\StreamId;
 use Psr\Cache\CacheItemInterface;
 use Psr\Cache\CacheItemPoolInterface;
@@ -47,10 +48,6 @@ final readonly class CachedAvailableEvents implements AvailableEvents
         foreach ($availableEvents as $key => $event) {
             $streamId = StreamId::fromString($event['stream']);
 
-            if ($this->streamLocker->isLocked($streamId)) {
-                continue;
-            }
-
             if (!$this->streamLocker->lock($streamId)) {
                 continue;
             }
@@ -79,8 +76,6 @@ final readonly class CachedAvailableEvents implements AvailableEvents
         $availableEvents->set($events);
 
         $this->cache->save($availableEvents);
-
-        $this->streamLocker->release(StreamId::fromString($event['stream']));
     }
 
     public function count(ApplicationId $applicationId): int
@@ -95,5 +90,10 @@ final readonly class CachedAvailableEvents implements AvailableEvents
         }
 
         return min(array_keys($availableEvents));
+    }
+
+    public function ack(StreamId $stream, Checkpoint $allStreamCheckpoint): void
+    {
+        $this->streamLocker->release($stream);
     }
 }
