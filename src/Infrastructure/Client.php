@@ -162,6 +162,12 @@ final readonly class Client
             });
     }
 
+    public function list(ApplicationId $applicationId): array
+    {
+        return \iterator_to_array($this->availableEvents->list($applicationId));
+    }
+
+
     private static function jsonDecodeErrorMessage(string $parsedEvent): string
     {
         return sprintf(

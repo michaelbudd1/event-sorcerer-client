@@ -18,4 +18,6 @@ interface AvailableEvents
     public function remove(CacheItemInterface $availableEvents, array $event, int $index): void;
 
     public function count(ApplicationId $applicationId): int;
+
+    public function list(ApplicationId $applicationId): iterable;
 }
