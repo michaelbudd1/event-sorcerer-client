@@ -11,6 +11,4 @@ interface StreamLocker
     public function lock(StreamId $streamId): bool;
 
     public function release(StreamId $streamId): void;
-
-    public function isLocked(StreamId $streamId): bool;
 }
