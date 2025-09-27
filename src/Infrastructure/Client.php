@@ -162,9 +162,11 @@ final readonly class Client
             });
     }
 
-    public function list(ApplicationId $applicationId): iterable
+    public function list(string $applicationId): iterable
     {
-        return $this->availableEvents->list($applicationId);
+        return $this->availableEvents->list(
+            ApplicationId::fromString($applicationId)
+        );
     }
 
 
