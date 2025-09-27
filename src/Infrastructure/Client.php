@@ -162,9 +162,9 @@ final readonly class Client
             });
     }
 
-    public function list(ApplicationId $applicationId): array
+    public function list(ApplicationId $applicationId): iterable
     {
-        return \iterator_to_array($this->availableEvents->list($applicationId));
+        return $this->availableEvents->list($applicationId);
     }
 
 
