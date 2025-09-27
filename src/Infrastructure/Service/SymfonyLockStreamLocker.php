@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace PearTreeWeb\EventSourcerer\Client\Infrastructure\Repository;
+namespace PearTreeWeb\EventSourcerer\Client\Infrastructure\Service;
 
 use PearTreeWeb\EventSourcerer\Client\Domain\Repository\StreamLocker;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Model\StreamId;
