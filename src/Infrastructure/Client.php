@@ -169,7 +169,6 @@ final readonly class Client
         );
     }
 
-
     private static function jsonDecodeErrorMessage(string $parsedEvent): string
     {
         return sprintf(
@@ -187,7 +186,20 @@ final readonly class Client
                 continue;
             }
 
-            $this->availableEvents->add($applicationId, $decodedEvent);
+            $this->addEventToCache($applicationId, $decodedEvent);
         }
+    }
+
+    private function addEventToCache(ApplicationId $applicationId, array $decodedEvent): void
+    {
+        if ($this->availableEvents->count($applicationId) > 10) {
+            sleep(1);
+
+            $this->addEventToCache($applicationId, $decodedEvent);
+
+            return;
+        }
+
+        $this->availableEvents->add($applicationId, $decodedEvent);
     }
 }
