@@ -192,7 +192,7 @@ final readonly class Client
 
     private function addEventToCache(ApplicationId $applicationId, array $decodedEvent): void
     {
-        if ($this->availableEvents->count($applicationId) > 10) {
+        if ($this->availableEvents->count($applicationId) >= 10) {
             sleep(1);
 
             $this->addEventToCache($applicationId, $decodedEvent);

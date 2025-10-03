@@ -25,7 +25,7 @@ final readonly class SymfonyLockAvailableEventsLocker implements AvailableEvents
 
     public function lock(): bool
     {
-        return $this->fetchLock()->acquire(true);
+        return $this->fetchLock()->acquire();
     }
 
     public function release(): void
