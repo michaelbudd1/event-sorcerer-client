@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace PearTreeWeb\EventSourcerer\Client\Infrastructure;
 
 use PearTreeWeb\EventSourcerer\Client\Domain\Repository\AvailableEvents;
+use PearTreeWeb\EventSourcerer\Client\Domain\Repository\SharedProcessCommunication;
 use PearTreeWeb\EventSourcerer\Client\Infrastructure\Exception\CannotFetchMessages;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Model\ApplicationId;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Model\Checkpoint;
@@ -27,6 +28,7 @@ final readonly class Client
     public function __construct(
         private Config $config,
         private AvailableEvents $availableEvents,
+        private SharedProcessCommunication $sharedProcessCommunication,
         private ?PromiseInterface $connection = null
     ) {}
 
@@ -35,6 +37,7 @@ final readonly class Client
         return new self(
             $this->config,
             $this->availableEvents,
+            $this->sharedProcessCommunication,
             (new Connector())
                 ->connect(
                     sprintf(
@@ -71,7 +74,7 @@ final readonly class Client
 
                 $connection->write(CreateMessage::forProvidingIdentity($applicationId, $this->config->applicationType));
 
-                if (0 === $this->availableEventsCount()) {
+                if (!$this->sharedProcessCommunication->catchupInProgress()) {
                     $connection->write(
                         CreateMessage::forCatchupRequest(
                             StreamId::fromString('*'),
