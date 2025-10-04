@@ -7,7 +7,7 @@ namespace PearTreeWeb\EventSourcerer\Client\Infrastructure\Repository;
 use PearTreeWeb\EventSourcerer\Client\Domain\Repository\SharedProcessCommunication;
 use Psr\Cache\CacheItemPoolInterface;
 
-final readonly class SharedProcessCache implements SharedProcessCommunication
+final readonly class SharedProcessCommunicationCache implements SharedProcessCommunication
 {
     public function __construct(private CacheItemPoolInterface $cacheItemPool) {}
 

@@ -75,6 +75,8 @@ final readonly class Client
                 $connection->write(CreateMessage::forProvidingIdentity($applicationId, $this->config->applicationType));
 
                 if (!$this->sharedProcessCommunication->catchupInProgress()) {
+                    $this->sharedProcessCommunication->flagCatchupIsInProgress();
+
                     $connection->write(
                         CreateMessage::forCatchupRequest(
                             StreamId::fromString('*'),
