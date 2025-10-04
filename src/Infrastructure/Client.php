@@ -100,6 +100,11 @@ final readonly class Client
         );
     }
 
+    public function flagCatchupComplete(): void
+    {
+        $this->sharedProcessCommunication->flagCatchupIsNotInProgress();
+    }
+
     private static function decodeEvent(string $event): ?array
     {
         try {
