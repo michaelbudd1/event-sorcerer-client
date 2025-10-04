@@ -107,6 +107,8 @@ final readonly class Client
             return $this->fetchOneMessage();
         }
 
+        $this->sharedProcessCommunication->addEventCurrentlyBeingProcessed($message['allSequence']);
+
         return $message;
     }
 
@@ -160,6 +162,8 @@ final readonly class Client
             });
 
         $this->availableEvents->ack($stream, $allStreamCheckpoint);
+
+        $this->sharedProcessCommunication->removeEventCurrentlyBeingProcessed($allStreamCheckpoint->value);
     }
 
     public function writeNewEvent(
