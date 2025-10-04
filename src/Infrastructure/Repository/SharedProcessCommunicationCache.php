@@ -46,7 +46,7 @@ final readonly class SharedProcessCommunicationCache implements SharedProcessCom
 
         $currentlyBeingProcessed = $currentlyBeingProcessedCacheItem->get() ?? [];
 
-        $currentlyBeingProcessed[] = $allStreamCheckpoint;
+        $currentlyBeingProcessed[$allStreamCheckpoint] = $allStreamCheckpoint;
 
         $currentlyBeingProcessedCacheItem->set($currentlyBeingProcessed);
 
@@ -72,5 +72,12 @@ final readonly class SharedProcessCommunicationCache implements SharedProcessCom
     private function currentlyBeingProcessedCacheItem(): CacheItemInterface
     {
         return $this->cacheItemPool->getItem(SharedProcessCommunicationItem::EventsBeingProcessedCurrently->value);
+    }
+
+    public function messageIsAlreadyBeingProcessed(int $allStreamCheckpoint): bool
+    {
+        $beingProcessed = $this->currentlyBeingProcessedCacheItem()->get() ?? [];
+
+        return isset($beingProcessed[$allStreamCheckpoint]);
     }
 }
