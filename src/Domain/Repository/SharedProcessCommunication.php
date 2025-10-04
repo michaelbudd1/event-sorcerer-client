@@ -11,4 +11,13 @@ interface SharedProcessCommunication
     public function flagCatchupIsInProgress(): void;
 
     public function flagCatchupIsNotInProgress(): void;
+
+    /**
+     * @return int[]
+     */
+    public function eventsBeingProcessedCurrently(): array;
+
+    public function messageIsAlreadyBeingProcessed(int $allStreamCheckpoint): bool;
+    
+    public function addEventCurrentlyBeingProcessed(int $allStreamCheckpoint): void;
 }

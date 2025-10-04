@@ -95,9 +95,19 @@ final readonly class Client
 
     public function fetchOneMessage(): ?array
     {
-        return $this->availableEvents->fetchOne(
+        $message = $this->availableEvents->fetchOne(
             ApplicationId::fromString($this->config->eventSourcererApplicationId)
         );
+
+        if (null === $message) {
+            return null;
+        }
+
+        if ($this->sharedProcessCommunication->messageIsAlreadyBeingProcessed($message['allSequence'])) {
+            return $this->fetchOneMessage();
+        }
+
+        return $message;
     }
 
     public function flagCatchupComplete(): void
