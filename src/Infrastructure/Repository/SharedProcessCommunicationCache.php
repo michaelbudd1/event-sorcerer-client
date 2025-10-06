@@ -80,4 +80,13 @@ final readonly class SharedProcessCommunicationCache implements SharedProcessCom
 
         return isset($beingProcessed[$allStreamCheckpoint]);
     }
+
+    public function removeAll(): void
+    {
+        $cacheItem = $this->cacheItemPool->getItem(SharedProcessCommunicationItem::EventsBeingProcessedCurrently->value);
+
+        $cacheItem->set([]);
+
+        $this->cacheItemPool->save($cacheItem);
+    }
 }

@@ -6,6 +6,7 @@ namespace PearTreeWeb\EventSourcerer\Client\Infrastructure\Service;
 
 use PearTreeWeb\EventSourcerer\Client\Domain\Repository\StreamLocker;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Model\StreamId;
+use Symfony\Component\Lock\Key;
 use Symfony\Component\Lock\LockFactory;
 use Symfony\Component\Lock\SharedLockInterface;
 use Symfony\Component\Lock\Store\FlockStore;
@@ -34,6 +35,13 @@ final readonly class SymfonyLockStreamLocker implements StreamLocker
 
     private function fetchLock(StreamId $streamId): SharedLockInterface
     {
-        return $this->lockFactory->createLock($streamId->toString());
+        return $this->lockFactory->createLockFromKey(
+            new Key($streamId->toString())
+        );
+    }
+
+    public function isLocked(StreamId $streamId): bool
+    {
+        return $this->fetchLock($streamId)->isAcquired();
     }
 }

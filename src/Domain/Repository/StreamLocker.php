@@ -8,6 +8,8 @@ use PearTreeWebLtd\EventSourcererMessageUtilities\Model\StreamId;
 
 interface StreamLocker
 {
+    public function isLocked(StreamId $streamId): bool;
+
     public function lock(StreamId $streamId): bool;
 
     public function release(StreamId $streamId): void;

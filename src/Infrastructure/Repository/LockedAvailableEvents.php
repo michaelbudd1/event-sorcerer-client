@@ -48,7 +48,7 @@ final readonly class LockedAvailableEvents implements AvailableEvents
         foreach ($availableEvents as $key => $event) {
             $streamId = StreamId::fromString($event['stream']);
 
-            if (!$this->streamLocker->lock($streamId)) {
+            if ($this->streamLocker->isLocked($streamId) || !$this->streamLocker->lock($streamId)) {
                 continue;
             }
 
@@ -76,6 +76,15 @@ final readonly class LockedAvailableEvents implements AvailableEvents
         $availableEvents->set($events);
 
         $this->cache->save($availableEvents);
+    }
+
+    public function removeAll(ApplicationId $applicationId): void
+    {
+        $availableEventsCache = $this->availableMessages($applicationId);
+
+        $availableEventsCache->set([]);
+
+        $this->cache->save($availableEventsCache);
     }
 
     public function count(ApplicationId $applicationId): int

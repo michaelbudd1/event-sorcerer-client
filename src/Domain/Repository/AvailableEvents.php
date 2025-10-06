@@ -20,4 +20,6 @@ interface AvailableEvents
     public function count(ApplicationId $applicationId): int;
 
     public function list(ApplicationId $applicationId): iterable;
+
+    public function removeAll(ApplicationId $applicationId): void;
 }
