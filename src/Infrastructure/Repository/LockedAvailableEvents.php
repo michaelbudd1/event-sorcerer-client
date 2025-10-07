@@ -60,13 +60,6 @@ final readonly class LockedAvailableEvents implements AvailableEvents
         return null;
     }
 
-    private function availableMessages(ApplicationId $applicationId): CacheItemInterface
-    {
-        return $this
-            ->cache
-            ->getItem(Utils::availableMessagesCacheKey($applicationId));
-    }
-
     public function remove(CacheItemInterface $availableEvents, array $event, int $index): void
     {
         $events = $availableEvents->get() ?? [];
@@ -92,15 +85,6 @@ final readonly class LockedAvailableEvents implements AvailableEvents
         return count($this->availableMessages($applicationId)->get() ?? []);
     }
 
-    private static function firstCheckpointAvailable(array $availableEvents): int
-    {
-        if (empty($availableEvents)) {
-            return 0;
-        }
-
-        return min(array_keys($availableEvents));
-    }
-
     public function ack(StreamId $stream, Checkpoint $allStreamCheckpoint): void
     {
         $this->streamLocker->release($stream);
@@ -113,5 +97,21 @@ final readonly class LockedAvailableEvents implements AvailableEvents
         foreach ($availableMessages as $message) {
             yield sprintf('%s %s', $message['stream'], $message['allSequence']);
         }
+    }
+
+    private static function firstCheckpointAvailable(array $availableEvents): int
+    {
+        if (empty($availableEvents)) {
+            return 0;
+        }
+
+        return min(array_keys($availableEvents));
+    }
+
+    private function availableMessages(ApplicationId $applicationId): CacheItemInterface
+    {
+        return $this
+            ->cache
+            ->getItem(Utils::availableMessagesCacheKey($applicationId));
     }
 }

@@ -35,7 +35,8 @@ final class ClientTest extends TestCase
         $this->streamLocker = new SymfonyLockStreamLocker(
             new LockFactory(
                 new InMemoryStore()
-            )
+            ),
+            new ArrayAdapter()
         );
 
         $this->availableEvents = new LockedAvailableEvents(new ArrayAdapter(), $this->streamLocker);
@@ -48,6 +49,20 @@ final class ClientTest extends TestCase
         $this->availableEvents->removeAll($this->applicationId);
         $this->streamLocker->release(StreamId::fromString(self::TEST_STREAM_1_ID));
         $this->sharedProcessCommunicationCache->removeAll();
+    }
+
+    #[Test]
+    public function itDoesASimpleLockOnOneStream(): void
+    {
+        $symfonyLocker = new SymfonyLockStreamLocker(
+            new LockFactory(new InMemoryStore()),
+            new ArrayAdapter()
+        );
+
+        $streamId = StreamId::fromString(self::TEST_STREAM_1_ID);
+
+        $this->assertTrue($symfonyLocker->lock($streamId));
+        $this->assertFalse($symfonyLocker->lock($streamId));
     }
 
     #[Test]
@@ -71,9 +86,9 @@ final class ClientTest extends TestCase
         $message2 = $client->fetchOneMessage();
         $message3 = $client->fetchOneMessage();
 
-        var_dump($message1, $message2, $message3);
-
-        $this->assertTrue(true);
+        $this->assertIsArray($message1);
+        $this->assertNull($message2);
+        $this->assertNull($message3);
     }
 
     private function addTestEvents(): void
