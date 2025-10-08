@@ -36,6 +36,7 @@ final readonly class SymfonyLockStreamLocker implements StreamLocker
     public function release(StreamId $streamId): void
     {
         $this->fetchLock($streamId)->release();
+        $this->sharedLockKeys->deleteItem($streamId->toString());
     }
 
     private function fetchLock(StreamId $streamId): SharedLockInterface
