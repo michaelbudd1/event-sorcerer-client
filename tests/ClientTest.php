@@ -2,19 +2,15 @@
 
 declare(strict_types=1);
 
-use PearTreeWeb\EventSourcerer\Client\Infrastructure\Client;
-use PearTreeWeb\EventSourcerer\Client\Infrastructure\Config;
-use PearTreeWeb\EventSourcerer\Client\Infrastructure\Repository\LockedAvailableEvents;
-use PearTreeWeb\EventSourcerer\Client\Infrastructure\Repository\SharedProcessCommunicationCache;
-use PearTreeWeb\EventSourcerer\Client\Infrastructure\Service\SymfonyLockStreamLocker;
+use PearTreeWeb\EventSourcerer\Client\Domain\Model\MessageBucket;
+use PearTreeWeb\EventSourcerer\Client\Domain\Model\WorkerId;
+use PearTreeWeb\EventSourcerer\Client\Infrastructure\Repository\BucketedAvailableEvents;
+use PearTreeWeb\EventSourcerer\Client\Infrastructure\Service\SharedCacheStreamBuckets;
+use PearTreeWeb\EventSourcerer\Client\Infrastructure\Service\SharedCacheStreamWorkerManager;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Model\ApplicationId;
-use PearTreeWebLtd\EventSourcererMessageUtilities\Model\ApplicationType;
-use PearTreeWebLtd\EventSourcererMessageUtilities\Model\StreamId;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Cache\Adapter\ArrayAdapter;
-use Symfony\Component\Lock\LockFactory;
-use Symfony\Component\Lock\Store\InMemoryStore;
 use Symfony\Component\Yaml\Yaml;
 
 final class ClientTest extends TestCase
@@ -22,73 +18,51 @@ final class ClientTest extends TestCase
     private const string MOCK_DATA_FILE = '/data/mockEvents.yaml';
     private const string TEST_APPLICATION_ID = 'bf245936-e880-47d4-8b03-7f52b011f9e9';
     private const string TEST_STREAM_1_ID = 'c71ff609-ad7c-44d5-97ba-13dc3bd60345';
+    private const string WORKER_1_ID = 'worker1';
 
+    private BucketedAvailableEvents $availableEvents;
     private ApplicationId $applicationId;
-    private LockedAvailableEvents $availableEvents;
-    private SymfonyLockStreamLocker $streamLocker;
-    private SharedProcessCommunicationCache $sharedProcessCommunicationCache;
+    private SharedCacheStreamBuckets $streamBuckets;
+    private MessageBucket $bucket1;
+    private MessageBucket $bucket2;
+    private MessageBucket $bucket3;
 
     protected function setUp(): void
     {
+        $this->bucket1 = self::createMessageBucket();
+        $this->bucket2 = self::createMessageBucket();
+        $this->bucket3 = self::createMessageBucket();
+
+        $this->streamBuckets = new SharedCacheStreamBuckets(
+            new ArrayAdapter(),
+            $this->bucket1,
+            $this->bucket2,
+            $this->bucket3
+        );
+
+        $this->availableEvents = new BucketedAvailableEvents($this->streamBuckets);
+
         $this->applicationId = ApplicationId::fromString(self::TEST_APPLICATION_ID);
-
-        $this->streamLocker = new SymfonyLockStreamLocker(
-            new LockFactory(
-                new InMemoryStore()
-            ),
-            new ArrayAdapter()
-        );
-
-        $this->availableEvents = new LockedAvailableEvents(new ArrayAdapter(), $this->streamLocker);
-
-        $this->sharedProcessCommunicationCache = new SharedProcessCommunicationCache(new ArrayAdapter());
-    }
-
-    protected function tearDown(): void
-    {
-        $this->availableEvents->removeAll($this->applicationId);
-        $this->streamLocker->release(StreamId::fromString(self::TEST_STREAM_1_ID));
-        $this->sharedProcessCommunicationCache->removeAll();
     }
 
     #[Test]
-    public function itDoesASimpleLockOnOneStream(): void
-    {
-        $symfonyLocker = new SymfonyLockStreamLocker(
-            new LockFactory(new InMemoryStore()),
-            new ArrayAdapter()
-        );
-
-        $streamId = StreamId::fromString(self::TEST_STREAM_1_ID);
-
-        $this->assertTrue($symfonyLocker->lock($streamId));
-        $this->assertFalse($symfonyLocker->lock($streamId));
-    }
-
-    #[Test]
-    public function itFetchesMessagesInCorrectOrder(): void
+    public function itEvenlyAddsStreamsToBuckets(): void
     {
         $this->addTestEvents();
 
-        $client = new Client(
-            new Config(
-                ApplicationType::Unknown,
-                '',
-                '',
-                9999,
-                self::TEST_APPLICATION_ID
-            ),
-            $this->availableEvents,
-            $this->sharedProcessCommunicationCache
-        );
+        $this->assertEquals(2, $this->bucket1->numberOfStreamsWithin());
+        $this->assertEquals(1, $this->bucket2->numberOfStreamsWithin());
+        $this->assertEquals(1, $this->bucket3->numberOfStreamsWithin());
+    }
 
-        $message1 = $client->fetchOneMessage();
-        $message2 = $client->fetchOneMessage();
-        $message3 = $client->fetchOneMessage();
+    #[Test]
+    public function itEvenlyAssignsWorkers(): void
+    {
+        $streamWorkerManager = new SharedCacheStreamWorkerManager(new ArrayAdapter());
 
-        $this->assertIsArray($message1);
-        $this->assertNull($message2);
-        $this->assertNull($message3);
+        $worker1 = WorkerId::fromString(self::WORKER_1_ID);
+
+        $streamWorkerManager->declareWorker($worker1, $this->streamBuckets->bucketIndexes());
     }
 
     private function addTestEvents(): void
@@ -98,5 +72,10 @@ final class ClientTest extends TestCase
 
             $this->availableEvents->add($this->applicationId, $event);
         }
+    }
+
+    private static function createMessageBucket(): MessageBucket
+    {
+        return new MessageBucket(new ArrayAdapter());
     }
 }

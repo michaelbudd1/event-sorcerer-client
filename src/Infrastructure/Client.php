@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace PearTreeWeb\EventSourcerer\Client\Infrastructure;
 
+use PearTreeWeb\EventSourcerer\Client\Domain\Model\WorkerId;
 use PearTreeWeb\EventSourcerer\Client\Domain\Repository\AvailableEvents;
 use PearTreeWeb\EventSourcerer\Client\Domain\Repository\SharedProcessCommunication;
 use PearTreeWeb\EventSourcerer\Client\Infrastructure\Exception\CannotFetchMessages;
@@ -61,11 +62,12 @@ final readonly class Client
         return 0 !== $this->availableEventsCount();
     }
 
-    public function listenForMessages(): void
+    public function listenForMessages(WorkerId $workerId): void
     {
         if (null === $this->connection) {
             throw CannotFetchMessages::beforeConnectionHasBeenEstablished();
         }
+
 
         $this
             ->connection
