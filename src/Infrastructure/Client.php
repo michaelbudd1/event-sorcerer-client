@@ -70,8 +70,6 @@ final readonly class Client
 
         $applicationId = ApplicationId::fromString($this->config->eventSourcererApplicationId);
 
-        $this->availableEvents->declareWorker($workerId, $applicationId);
-
         $this
             ->connection
             ->then(function (ConnectionInterface $connection) use ($applicationId) {
@@ -99,6 +97,8 @@ final readonly class Client
     public function fetchOneMessage(WorkerId $workerId): ?array
     {
         $applicationId = ApplicationId::fromString($this->config->eventSourcererApplicationId);
+
+        $this->availableEvents->declareWorker($workerId, $applicationId);
 
         $message = $this->availableEvents->fetchOne($workerId, $applicationId);
 
