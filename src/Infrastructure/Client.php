@@ -68,11 +68,13 @@ final readonly class Client
             throw CannotFetchMessages::beforeConnectionHasBeenEstablished();
         }
 
+        $applicationId = ApplicationId::fromString($this->config->eventSourcererApplicationId);
+
+        $this->availableEvents->declareWorker($workerId, $applicationId);
 
         $this
             ->connection
-            ->then(function (ConnectionInterface $connection) {
-                $applicationId = ApplicationId::fromString($this->config->eventSourcererApplicationId);
+            ->then(function (ConnectionInterface $connection) use ($applicationId) {
 
                 $connection->write(CreateMessage::forProvidingIdentity($applicationId, $this->config->applicationType));
 
@@ -95,18 +97,18 @@ final readonly class Client
             });
     }
 
-    public function fetchOneMessage(): ?array
+    public function fetchOneMessage(WorkerId $workerId): ?array
     {
-        $message = $this->availableEvents->fetchOne(
-            ApplicationId::fromString($this->config->eventSourcererApplicationId)
-        );
+        $applicationId = ApplicationId::fromString($this->config->eventSourcererApplicationId);
+
+        $message = $this->availableEvents->fetchOne($workerId, $applicationId);
 
         if (null === $message) {
             return null;
         }
 
         if ($this->sharedProcessCommunication->messageIsAlreadyBeingProcessed($message['allSequence'])) {
-            return $this->fetchOneMessage();
+            return $this->fetchOneMessage($workerId);
         }
 
         $this->sharedProcessCommunication->addEventCurrentlyBeingProcessed($message['allSequence']);

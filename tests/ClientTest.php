@@ -17,8 +17,9 @@ final class ClientTest extends TestCase
 {
     private const string MOCK_DATA_FILE = '/data/mockEvents.yaml';
     private const string TEST_APPLICATION_ID = 'bf245936-e880-47d4-8b03-7f52b011f9e9';
-    private const string TEST_STREAM_1_ID = 'c71ff609-ad7c-44d5-97ba-13dc3bd60345';
     private const string WORKER_1_ID = 'worker1';
+    private const string WORKER_2_ID = 'worker2';
+    private const string WORKER_3_ID = 'worker3';
 
     private BucketedAvailableEvents $availableEvents;
     private ApplicationId $applicationId;
@@ -26,12 +27,21 @@ final class ClientTest extends TestCase
     private MessageBucket $bucket1;
     private MessageBucket $bucket2;
     private MessageBucket $bucket3;
+    private SharedCacheStreamWorkerManager $streamWorkerManager;
+    private WorkerId $worker1;
+    private WorkerId $worker2;
+    private WorkerId $worker3;
+
 
     protected function setUp(): void
     {
         $this->bucket1 = self::createMessageBucket();
         $this->bucket2 = self::createMessageBucket();
         $this->bucket3 = self::createMessageBucket();
+
+        $this->worker1 = WorkerId::fromString(self::WORKER_1_ID);
+        $this->worker2 = WorkerId::fromString(self::WORKER_2_ID);
+        $this->worker3 = WorkerId::fromString(self::WORKER_3_ID);
 
         $this->streamBuckets = new SharedCacheStreamBuckets(
             new ArrayAdapter(),
@@ -40,7 +50,9 @@ final class ClientTest extends TestCase
             $this->bucket3
         );
 
-        $this->availableEvents = new BucketedAvailableEvents($this->streamBuckets);
+        $this->streamWorkerManager = new SharedCacheStreamWorkerManager(new ArrayAdapter());
+
+        $this->availableEvents = new BucketedAvailableEvents($this->streamBuckets, $this->streamWorkerManager);
 
         $this->applicationId = ApplicationId::fromString(self::TEST_APPLICATION_ID);
     }
@@ -56,14 +68,33 @@ final class ClientTest extends TestCase
     }
 
     #[Test]
+    public function itAssignsCorrectBucketToWorker(): void
+    {
+        $this->addTestEvents();
+
+        $this->streamWorkerManager->declareWorker($this->worker1, $this->streamBuckets->bucketIndexes());
+        $this->streamWorkerManager->declareWorker($this->worker2, $this->streamBuckets->bucketIndexes());
+        $this->streamWorkerManager->declareWorker($this->worker3, $this->streamBuckets->bucketIndexes());
+
+        $assignedBucket = $this->streamWorkerManager->bucketForWorkerId($this->worker1);
+
+        $this->assertEquals(0, $assignedBucket);
+    }
+
+    #[Test]
     public function itEvenlyAssignsWorkers(): void
     {
-        $streamWorkerManager = new SharedCacheStreamWorkerManager(new ArrayAdapter());
+        $this->addTestEvents();
 
-        $worker1 = WorkerId::fromString(self::WORKER_1_ID);
+        $this->streamWorkerManager->declareWorker($this->worker1, $this->streamBuckets->bucketIndexes());
+        $this->streamWorkerManager->declareWorker($this->worker2, $this->streamBuckets->bucketIndexes());
+        $this->streamWorkerManager->declareWorker($this->worker3, $this->streamBuckets->bucketIndexes());
 
-        $streamWorkerManager->declareWorker($worker1, $this->streamBuckets->bucketIndexes());
+        $event = $this->availableEvents->fetchOne($this->worker1, $this->applicationId);
+
+        $this->assertEquals(1, $event['allSequence']);
     }
+
 
     private function addTestEvents(): void
     {

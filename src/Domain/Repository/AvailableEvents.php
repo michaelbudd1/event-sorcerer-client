@@ -23,4 +23,6 @@ interface AvailableEvents
     public function list(ApplicationId $applicationId): iterable;
 
     public function removeAll(ApplicationId $applicationId): void;
+
+    public function declareWorker(WorkerId $workerId, ApplicationId $applicationId): void;
 }

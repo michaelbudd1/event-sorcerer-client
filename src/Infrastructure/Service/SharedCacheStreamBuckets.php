@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace PearTreeWeb\EventSourcerer\Client\Infrastructure\Service;
 
 use PearTreeWeb\EventSourcerer\Client\Domain\Model\MessageBucket;
+use PearTreeWeb\EventSourcerer\Client\Domain\Model\WorkerId;
 use PearTreeWeb\EventSourcerer\Client\Domain\Service\StreamBuckets;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Model\StreamId;
 use Psr\Cache\CacheItemPoolInterface;
@@ -41,9 +42,9 @@ final readonly class SharedCacheStreamBuckets implements StreamBuckets
         $this->buckets[$index]->addEvent($decodedEvent);
     }
 
-    public function fetchOneEvent(): array
+    public function fetchOneEvent(int $bucketIndex): array
     {
-//        $streamIdsForWorker = $this->streamWorkerManager->workerForStreamId();
+        return $this->buckets[$bucketIndex]->fetchOneEvent();
     }
 
     public function bucketIndexes(): array

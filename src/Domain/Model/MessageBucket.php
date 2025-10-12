@@ -8,6 +8,7 @@ use Psr\Cache\CacheItemPoolInterface;
 
 final readonly class MessageBucket
 {
+    private const string ALL_EVENTS = 'allEvents';
     private const string STREAM_COUNT = 'streamCount';
     private const string UNIQUE_STREAMS = 'uniqueStreams';
     private const string CACHE_ITEM_PREFIX = 'cacheItem';
@@ -24,13 +25,58 @@ final readonly class MessageBucket
      */
     public function addEvent(array $event): void
     {
-        $cacheItem = $this->events->getItem(self::cacheItemKey($event['allSequence']));
+        $cacheItemKey = self::cacheItemKey($event['allSequence']);
+
+        $this->cacheIndividualEvent($event, $cacheItemKey);
+        $this->cacheEventIndex($event, $cacheItemKey);
+
+        $this->updateNumberOfStreamsInBucket($event['stream']);
+    }
+
+    public function fetchOneEvent(): ?array
+    {
+        $allEventIndexesCacheItem = $this->events->getItem(self::ALL_EVENTS);
+        $allEventIndexes = $allEventIndexesCacheItem->get();
+
+        if (empty($allEventIndexes)) {
+            return null;
+        }
+
+        $minIndex = min(array_keys($allEventIndexes));
+        $eventCacheKey = $allEventIndexes[$minIndex];
+
+        $fetchedEvent = $this->events->getItem($eventCacheKey)->get();
+
+        unset($allEventIndexes[$minIndex]);
+
+        $allEventIndexesCacheItem->set($allEventIndexes);
+
+        $this->events->deleteItem($eventCacheKey);
+        $this->events->save($allEventIndexesCacheItem);
+
+        return $fetchedEvent;
+    }
+
+    private function cacheEventIndex(array $event, string $cacheItemKey): void
+    {
+        $cacheItem = $this->events->getItem(self::ALL_EVENTS);
+
+        $eventIndexes = $cacheItem->get() ?? [];
+
+        $eventIndexes[$event['allSequence']] = $cacheItemKey;
+
+        $cacheItem->set($eventIndexes);
+
+        $this->events->save($cacheItem);
+    }
+
+    private function cacheIndividualEvent(array $event, string $cacheItemKey): void
+    {
+        $cacheItem = $this->events->getItem($cacheItemKey);
 
         $cacheItem->set($event);
 
         $this->events->save($cacheItem);
-
-        $this->updateNumberOfStreamsInBucket($event['stream']);
     }
 
     private static function cacheItemKey(int $allSequence): string

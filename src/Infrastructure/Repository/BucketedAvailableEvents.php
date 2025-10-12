@@ -7,6 +7,7 @@ namespace PearTreeWeb\EventSourcerer\Client\Infrastructure\Repository;
 use PearTreeWeb\EventSourcerer\Client\Domain\Model\WorkerId;
 use PearTreeWeb\EventSourcerer\Client\Domain\Repository\AvailableEvents;
 use PearTreeWeb\EventSourcerer\Client\Domain\Service\StreamBuckets;
+use PearTreeWeb\EventSourcerer\Client\Domain\Service\StreamWorkerManager;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Model\ApplicationId;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Model\Checkpoint;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Model\StreamId;
@@ -14,7 +15,10 @@ use Psr\Cache\CacheItemInterface;
 
 final readonly class BucketedAvailableEvents implements AvailableEvents
 {
-    public function __construct(private StreamBuckets $streamBuckets) {}
+    public function __construct(
+        private StreamBuckets $streamBuckets,
+        private StreamWorkerManager $streamWorkerManager
+    ) {}
 
     public function add(ApplicationId $applicationId, array $event): void
     {
@@ -29,7 +33,9 @@ final readonly class BucketedAvailableEvents implements AvailableEvents
 
     public function fetchOne(WorkerId $workerId, ApplicationId $applicationId): ?array
     {
-        return $this->streamBuckets->fetchOneEvent($workerId, $applicationId);
+        $bucketIndex = $this->streamWorkerManager->bucketForWorkerId($workerId);
+
+        return $this->streamBuckets->fetchOneEvent($bucketIndex);
     }
 
     public function remove(CacheItemInterface $availableEvents, array $event, int $index): void
@@ -60,8 +66,8 @@ final readonly class BucketedAvailableEvents implements AvailableEvents
 
     }
 
-    private function availableMessages(ApplicationId $applicationId): CacheItemInterface
+    public function declareWorker(WorkerId $workerId, ApplicationId $applicationId): void
     {
-
+        $this->streamWorkerManager->declareWorker($workerId, $this->streamBuckets->bucketIndexes());
     }
 }
