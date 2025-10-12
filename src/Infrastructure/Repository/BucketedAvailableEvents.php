@@ -50,6 +50,7 @@ final readonly class BucketedAvailableEvents implements AvailableEvents
 
     public function count(ApplicationId $applicationId): int
     {
+        return $this->streamBuckets->count();
     }
 
     public function ack(StreamId $stream, Checkpoint $allStreamCheckpoint): void

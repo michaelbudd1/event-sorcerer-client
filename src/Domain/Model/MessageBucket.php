@@ -104,4 +104,11 @@ final readonly class MessageBucket
 
         $this->events->save($streamCountCacheItem);
     }
+
+    public function eventCount(): int
+    {
+        $allEventIndexesCacheItem = $this->events->getItem(self::ALL_EVENTS)->get() ?? [];
+
+        return count($allEventIndexesCacheItem);
+    }
 }

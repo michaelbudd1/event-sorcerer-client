@@ -15,4 +15,6 @@ interface StreamBuckets
     public function addEventToBucket(int $index, array $decodedEvent): void;
 
     public function addStreamToBucket(int $index, StreamId $streamId): void;
+
+    public function count(): int;
 }

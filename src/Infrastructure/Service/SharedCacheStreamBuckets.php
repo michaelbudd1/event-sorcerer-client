@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace PearTreeWeb\EventSourcerer\Client\Infrastructure\Service;
 
 use PearTreeWeb\EventSourcerer\Client\Domain\Model\MessageBucket;
-use PearTreeWeb\EventSourcerer\Client\Domain\Model\WorkerId;
 use PearTreeWeb\EventSourcerer\Client\Domain\Service\StreamBuckets;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Model\StreamId;
 use Psr\Cache\CacheItemPoolInterface;
@@ -59,5 +58,11 @@ final readonly class SharedCacheStreamBuckets implements StreamBuckets
         $cacheItem->set($index);
 
         $this->bucketForStreamIndexes->save($cacheItem);
+    }
+
+    public function count(): int
+    {
+        return collect($this->buckets)
+            ->sum(static fn (MessageBucket $bucket) => $bucket->eventCount());
     }
 }

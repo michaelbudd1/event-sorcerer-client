@@ -75,7 +75,6 @@ final readonly class Client
         $this
             ->connection
             ->then(function (ConnectionInterface $connection) use ($applicationId) {
-
                 $connection->write(CreateMessage::forProvidingIdentity($applicationId, $this->config->applicationType));
 
                 if (!$this->sharedProcessCommunication->catchupInProgress()) {
