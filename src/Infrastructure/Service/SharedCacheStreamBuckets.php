@@ -48,6 +48,8 @@ final readonly class SharedCacheStreamBuckets implements StreamBuckets
                 return $event;
             }
         }
+
+        return null;
     }
 
     public function bucketIndexes(): array
