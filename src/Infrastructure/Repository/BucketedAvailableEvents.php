@@ -71,4 +71,9 @@ final readonly class BucketedAvailableEvents implements AvailableEvents
     {
         $this->streamWorkerManager->declareWorker($workerId, $this->streamBuckets->bucketIndexes());
     }
+
+    public function detachWorker(WorkerId $workerId): void
+    {
+        $this->streamWorkerManager->detachWorker($workerId, $this->streamBuckets->bucketIndexes());
+    }
 }

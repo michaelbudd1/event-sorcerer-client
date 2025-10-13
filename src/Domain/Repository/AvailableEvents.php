@@ -25,4 +25,6 @@ interface AvailableEvents
     public function removeAll(ApplicationId $applicationId): void;
 
     public function declareWorker(WorkerId $workerId, ApplicationId $applicationId): void;
+
+    public function detachWorker(WorkerId $workerId);
 }

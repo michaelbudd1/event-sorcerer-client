@@ -108,7 +108,6 @@ final class ClientTest extends TestCase
         );
     }
 
-
     private function addTestEvents(): void
     {
         foreach (Yaml::parseFile(__DIR__ . self::MOCK_DATA_FILE) as $event) {

@@ -115,6 +115,11 @@ final readonly class Client
         return $message;
     }
 
+    public function detachWorker(WorkerId $workerId): void
+    {
+        $this->availableEvents->detachWorker($workerId);
+    }
+
     public function flagCatchupComplete(): void
     {
         $this->sharedProcessCommunication->flagCatchupIsNotInProgress();

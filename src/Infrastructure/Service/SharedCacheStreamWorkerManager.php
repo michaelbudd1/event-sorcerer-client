@@ -7,7 +7,6 @@ namespace PearTreeWeb\EventSourcerer\Client\Infrastructure\Service;
 use ArrayIterator;
 use PearTreeWeb\EventSourcerer\Client\Domain\Model\WorkerId;
 use PearTreeWeb\EventSourcerer\Client\Domain\Service\StreamWorkerManager;
-use PearTreeWebLtd\EventSourcererMessageUtilities\Model\StreamId;
 use Psr\Cache\CacheItemPoolInterface;
 
 final readonly class SharedCacheStreamWorkerManager implements StreamWorkerManager
@@ -18,11 +17,6 @@ final readonly class SharedCacheStreamWorkerManager implements StreamWorkerManag
     public function __construct(
         private CacheItemPoolInterface $cacheItemPool
     ) {}
-
-    public function workerForStreamId(StreamId $streamId): WorkerId
-    {
-//        return $this->cacheItemPool->getItem()
-    }
 
     public function bucketsForWorkerId(WorkerId $workerId): array
     {
@@ -68,6 +62,23 @@ final readonly class SharedCacheStreamWorkerManager implements StreamWorkerManag
         if ($isNewWorker) {
             $this->reconfigure($bucketIndexes);
         }
+    }
+
+    public function detachWorker(WorkerId $workerId, array $bucketIndexes): void
+    {
+        $this->cacheItemPool->deleteItem($workerId->toString());
+
+        $cacheItem = $this->cacheItemPool->getItem(self::WORKERS_CACHE_KEY);
+
+        $workers = $cacheItem->get() ?? [];
+
+        unset($workers[$workerId->toString()]);
+
+        $cacheItem->set($workers);
+
+        $this->cacheItemPool->save($cacheItem);
+
+        $this->reconfigure($bucketIndexes);
     }
 
     private static function bucketIndexCacheKey(mixed $bucketIndex): string
