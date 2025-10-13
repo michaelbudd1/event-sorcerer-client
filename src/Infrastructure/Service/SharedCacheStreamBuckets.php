@@ -41,9 +41,13 @@ final readonly class SharedCacheStreamBuckets implements StreamBuckets
         $this->buckets[$index]->addEvent($decodedEvent);
     }
 
-    public function fetchOneEvent(int $bucketIndex): array
+    public function fetchOneEvent(array $bucketIndexes): ?array
     {
-        return $this->buckets[$bucketIndex]->fetchOneEvent();
+        foreach ($bucketIndexes as $bucketIndex) {
+            if ($event = $this->buckets[$bucketIndex]->fetchOneEvent()) {
+                return $event;
+            }
+        }
     }
 
     public function bucketIndexes(): array

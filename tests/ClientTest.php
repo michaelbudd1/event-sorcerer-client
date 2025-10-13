@@ -76,7 +76,7 @@ final class ClientTest extends TestCase
         $this->streamWorkerManager->declareWorker($this->worker2, $this->streamBuckets->bucketIndexes());
         $this->streamWorkerManager->declareWorker($this->worker3, $this->streamBuckets->bucketIndexes());
 
-        $assignedBucket = $this->streamWorkerManager->bucketForWorkerId($this->worker1);
+        $assignedBucket = $this->streamWorkerManager->bucketsForWorkerId($this->worker1);
 
         $this->assertEquals(0, $assignedBucket);
     }
@@ -93,6 +93,19 @@ final class ClientTest extends TestCase
         $event = $this->availableEvents->fetchOne($this->worker1, $this->applicationId);
 
         $this->assertEquals(1, $event['allSequence']);
+    }
+
+    #[Test]
+    public function itAssignsAllBucketsWhenOnlyOneWorker(): void
+    {
+        $this->addTestEvents();
+
+        $this->streamWorkerManager->declareWorker($this->worker1, $this->streamBuckets->bucketIndexes());
+
+        $this->assertEquals(
+            [0,1,2],
+            $this->streamWorkerManager->bucketsForWorkerId($this->worker1)
+        );
     }
 
 

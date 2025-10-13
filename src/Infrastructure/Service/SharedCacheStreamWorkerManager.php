@@ -24,7 +24,7 @@ final readonly class SharedCacheStreamWorkerManager implements StreamWorkerManag
 //        return $this->cacheItemPool->getItem()
     }
 
-    public function bucketForWorkerId(WorkerId $workerId): int
+    public function bucketsForWorkerId(WorkerId $workerId): array
     {
         return $this->cacheItemPool->getItem($workerId->toString())->get();
     }
@@ -88,7 +88,11 @@ final readonly class SharedCacheStreamWorkerManager implements StreamWorkerManag
     {
         $workerBucketItem = $this->cacheItemPool->getItem($workerId);
 
-        $workerBucketItem->set($bucketIndex);
+        $currentValue = $workerBucketItem->get() ?? [];
+
+        $currentValue[$bucketIndex] = $bucketIndex;
+
+        $workerBucketItem->set($currentValue);
 
         $this->cacheItemPool->save($workerBucketItem);
     }

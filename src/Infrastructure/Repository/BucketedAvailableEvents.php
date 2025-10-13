@@ -33,7 +33,7 @@ final readonly class BucketedAvailableEvents implements AvailableEvents
 
     public function fetchOne(WorkerId $workerId, ApplicationId $applicationId): ?array
     {
-        $bucketIndex = $this->streamWorkerManager->bucketForWorkerId($workerId);
+        $bucketIndex = $this->streamWorkerManager->bucketsForWorkerId($workerId);
 
         return $this->streamBuckets->fetchOneEvent($bucketIndex);
     }

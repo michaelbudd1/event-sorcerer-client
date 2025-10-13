@@ -11,7 +11,7 @@ interface StreamWorkerManager
 {
     public function workerForStreamId(StreamId $streamId): WorkerId;
 
-    public function bucketForWorkerId(WorkerId $workerId): int;
+    public function bucketsForWorkerId(WorkerId $workerId): array;
 
     /**
      * @param int[] $bucketIndexes
