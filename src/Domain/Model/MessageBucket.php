@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace PearTreeWeb\EventSourcerer\Client\Domain\Model;
 
+use Psr\Cache\CacheItemInterface;
 use Psr\Cache\CacheItemPoolInterface;
 
 final readonly class MessageBucket
@@ -30,7 +31,8 @@ final readonly class MessageBucket
         $this->cacheIndividualEvent($event, $cacheItemKey);
         $this->cacheEventIndex($event, $cacheItemKey);
 
-        $this->updateNumberOfStreamsInBucket($event['stream']);
+        $this->incrementNumberOfEventsForStream($event['stream']);
+        $this->updateNumberOfStreamsInBucket();
     }
 
     public function fetchOneEvent(): ?array
@@ -53,6 +55,8 @@ final readonly class MessageBucket
 
         $this->events->deleteItem($eventCacheKey);
         $this->events->save($allEventIndexesCacheItem);
+
+        $this->decrementNumberOfEventsForStream($fetchedEvent['stream']);
 
         return $fetchedEvent;
     }
@@ -84,19 +88,9 @@ final readonly class MessageBucket
         return sprintf('%s-%d', self::CACHE_ITEM_PREFIX, $allSequence);
     }
 
-    private function updateNumberOfStreamsInBucket(string $stream): void
+    private function updateNumberOfStreamsInBucket(): void
     {
-        $uniqueStreamsCacheItem = $this->events->getItem(self::UNIQUE_STREAMS);
-
-        $uniqueStreams = $uniqueStreamsCacheItem->get() ?? [];
-
-        $uniqueStreams[$stream] = $stream;
-
-        $uniqueStreamsCacheItem->set($uniqueStreams);
-
-        $this->events->save($uniqueStreamsCacheItem);
-
-        $numberOfStreams = count($uniqueStreams);
+        $numberOfStreams = count($this->uniqueStreamsCacheItem()->get() ?? []);
 
         $streamCountCacheItem = $this->events->getItem(self::STREAM_COUNT);
 
@@ -110,5 +104,49 @@ final readonly class MessageBucket
         $allEventIndexesCacheItem = $this->events->getItem(self::ALL_EVENTS)->get() ?? [];
 
         return count($allEventIndexesCacheItem);
+    }
+
+    public function isEmpty(): bool
+    {
+        return 0 === $this->eventCount();
+    }
+
+    private function incrementNumberOfEventsForStream(string $stream): void
+    {
+        $cacheItem = $this->uniqueStreamsCacheItem();
+
+        $uniqueStreams = $cacheItem->get() ?? [];
+
+        $currentNumberOfEvents = $uniqueStreams[$stream] ?? 0;
+
+        $uniqueStreams[$stream] = $currentNumberOfEvents + 1;
+
+        $cacheItem->set($uniqueStreams);
+
+        $this->events->save($cacheItem);
+    }
+
+    private function decrementNumberOfEventsForStream(string $stream): void
+    {
+        $cacheItem = $this->uniqueStreamsCacheItem();
+
+        $uniqueStreams = $cacheItem->get() ?? [];
+
+        $currentNumberOfEvents = $uniqueStreams[$stream] ?? 0;
+
+        $newNumberOfEvents = $currentNumberOfEvents - 1;
+
+        if (0 === $newNumberOfEvents) {
+            unset($uniqueStreams[$stream]);
+        } else {
+            $cacheItem->set($uniqueStreams);
+        }
+
+        $this->events->save($cacheItem);
+    }
+
+    private function uniqueStreamsCacheItem(): CacheItemInterface
+    {
+        return $this->events->getItem(self::UNIQUE_STREAMS);
     }
 }

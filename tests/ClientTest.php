@@ -50,7 +50,7 @@ final class ClientTest extends TestCase
             $this->bucket3
         );
 
-        $this->streamWorkerManager = new SharedCacheStreamWorkerManager(new ArrayAdapter());
+        $this->streamWorkerManager = new SharedCacheStreamWorkerManager(new ArrayAdapter(), new ArrayAdapter());
 
         $this->availableEvents = new BucketedAvailableEvents($this->streamBuckets, $this->streamWorkerManager);
 
@@ -76,9 +76,9 @@ final class ClientTest extends TestCase
         $this->streamWorkerManager->declareWorker($this->worker2, $this->streamBuckets->bucketIndexes());
         $this->streamWorkerManager->declareWorker($this->worker3, $this->streamBuckets->bucketIndexes());
 
-        $assignedBucket = $this->streamWorkerManager->bucketsForWorkerId($this->worker1);
-
-        $this->assertEquals(0, $assignedBucket);
+        $this->assertEquals([0 => 0], $this->streamWorkerManager->bucketsForWorkerId($this->worker1));
+        $this->assertEquals([1 => 1], $this->streamWorkerManager->bucketsForWorkerId($this->worker2));
+        $this->assertEquals([2 => 2], $this->streamWorkerManager->bucketsForWorkerId($this->worker3));
     }
 
     #[Test]

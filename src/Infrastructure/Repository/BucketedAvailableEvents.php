@@ -59,7 +59,6 @@ final readonly class BucketedAvailableEvents implements AvailableEvents
 
     public function list(ApplicationId $applicationId): iterable
     {
-
     }
 
     private static function firstCheckpointAvailable(array $availableEvents): int

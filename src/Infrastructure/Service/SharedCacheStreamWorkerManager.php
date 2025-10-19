@@ -15,7 +15,8 @@ final readonly class SharedCacheStreamWorkerManager implements StreamWorkerManag
     private const string BUCKET_INDEX_CACHE_KEY_PREFIX = 'bucketIndex';
 
     public function __construct(
-        private CacheItemPoolInterface $cacheItemPool
+        private CacheItemPoolInterface $cacheItemPool,
+        private CacheItemPoolInterface $workers
     ) {}
 
     public function bucketsForWorkerId(WorkerId $workerId): array
@@ -25,11 +26,9 @@ final readonly class SharedCacheStreamWorkerManager implements StreamWorkerManag
 
     private function reconfigure(array $bucketIndexes): void
     {
-        // a new worker has connected so now we need to reassign workers to buckets
-
         $workerIterator = new \InfiniteIterator(
             new ArrayIterator(
-                $this->cacheItemPool->getItem(self::WORKERS_CACHE_KEY)->get() ?? []
+                $this->workers->getItem(self::WORKERS_CACHE_KEY)->get() ?? []
             )
         );
 
@@ -47,7 +46,7 @@ final readonly class SharedCacheStreamWorkerManager implements StreamWorkerManag
 
     public function declareWorker(WorkerId $workerId, array $bucketIndexes): void
     {
-        $cacheItem = $this->cacheItemPool->getItem(self::WORKERS_CACHE_KEY);
+        $cacheItem = $this->workers->getItem(self::WORKERS_CACHE_KEY);
 
         $workers = $cacheItem->get() ?? [];
 
@@ -57,7 +56,7 @@ final readonly class SharedCacheStreamWorkerManager implements StreamWorkerManag
 
         $cacheItem->set($workers);
 
-        $this->cacheItemPool->save($cacheItem);
+        $this->workers->save($cacheItem);
 
         if ($isNewWorker) {
             $this->reconfigure($bucketIndexes);
@@ -68,7 +67,7 @@ final readonly class SharedCacheStreamWorkerManager implements StreamWorkerManag
     {
         $this->cacheItemPool->deleteItem($workerId->toString());
 
-        $cacheItem = $this->cacheItemPool->getItem(self::WORKERS_CACHE_KEY);
+        $cacheItem = $this->workers->getItem(self::WORKERS_CACHE_KEY);
 
         $workers = $cacheItem->get() ?? [];
 
