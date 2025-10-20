@@ -21,7 +21,7 @@ final readonly class SharedCacheStreamWorkerManager implements StreamWorkerManag
 
     public function bucketsForWorkerId(WorkerId $workerId): array
     {
-        return $this->cacheItemPool->getItem($workerId->toString())->get();
+        return $this->cacheItemPool->getItem($workerId->toString())->get() ?? [];
     }
 
     private function reconfigure(array $bucketIndexes): void
