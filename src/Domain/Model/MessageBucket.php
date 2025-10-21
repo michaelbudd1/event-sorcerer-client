@@ -111,6 +111,11 @@ final readonly class MessageBucket
         return 0 === $this->eventCount();
     }
 
+    public function clear(): void
+    {
+        $this->events->clear();
+    }
+
     private function incrementNumberOfEventsForStream(string $stream): void
     {
         $cacheItem = $this->uniqueStreamsCacheItem();

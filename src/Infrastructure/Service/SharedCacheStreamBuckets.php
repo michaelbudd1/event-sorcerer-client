@@ -75,5 +75,9 @@ final readonly class SharedCacheStreamBuckets implements StreamBuckets
     public function clear(): void
     {
         $this->bucketForStreamIndexes->clear();
+
+        foreach ($this->buckets as $bucket) {
+            $bucket->clear();
+        }
     }
 }
