@@ -17,4 +17,6 @@ interface StreamBuckets
     public function addStreamToBucket(int $index, StreamId $streamId): void;
 
     public function count(): int;
+
+    public function clear(): void;
 }

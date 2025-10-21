@@ -71,4 +71,9 @@ final readonly class SharedCacheStreamBuckets implements StreamBuckets
         return collect($this->buckets)
             ->sum(static fn (MessageBucket $bucket) => $bucket->eventCount());
     }
+
+    public function clear(): void
+    {
+        $this->bucketForStreamIndexes->clear();
+    }
 }

@@ -16,4 +16,8 @@ interface StreamWorkerManager
     public function declareWorker(WorkerId $workerId, array $bucketIndexes): void;
 
     public function detachWorker(WorkerId $workerId, array $bucketIndexes): void;
+
+    public function hasRegisteredWorkers(): bool;
+
+    public function clear(): void;
 }

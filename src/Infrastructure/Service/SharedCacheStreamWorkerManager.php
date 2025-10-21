@@ -7,6 +7,7 @@ namespace PearTreeWeb\EventSourcerer\Client\Infrastructure\Service;
 use ArrayIterator;
 use PearTreeWeb\EventSourcerer\Client\Domain\Model\WorkerId;
 use PearTreeWeb\EventSourcerer\Client\Domain\Service\StreamWorkerManager;
+use Psr\Cache\CacheItemInterface;
 use Psr\Cache\CacheItemPoolInterface;
 
 final readonly class SharedCacheStreamWorkerManager implements StreamWorkerManager
@@ -28,7 +29,7 @@ final readonly class SharedCacheStreamWorkerManager implements StreamWorkerManag
     {
         $workerIterator = new \InfiniteIterator(
             new ArrayIterator(
-                $this->workers->getItem(self::WORKERS_CACHE_KEY)->get() ?? []
+                $this->workersCacheItem()->get() ?? []
             )
         );
 
@@ -36,6 +37,11 @@ final readonly class SharedCacheStreamWorkerManager implements StreamWorkerManag
 
         foreach ($bucketIndexes as $bucketIndex) {
             $workerId = $workerIterator->current();
+
+            if (null === $workerId) {
+                // there are no workers
+                break;
+            }
 
             $this->mapBucketToWorker($bucketIndex, $workerId);
             $this->mapWorkerToBucket($workerId, $bucketIndex);
@@ -46,7 +52,7 @@ final readonly class SharedCacheStreamWorkerManager implements StreamWorkerManag
 
     public function declareWorker(WorkerId $workerId, array $bucketIndexes): void
     {
-        $cacheItem = $this->workers->getItem(self::WORKERS_CACHE_KEY);
+        $cacheItem = $this->workersCacheItem();
 
         $workers = $cacheItem->get() ?? [];
 
@@ -67,7 +73,7 @@ final readonly class SharedCacheStreamWorkerManager implements StreamWorkerManag
     {
         $this->cacheItemPool->deleteItem($workerId->toString());
 
-        $cacheItem = $this->workers->getItem(self::WORKERS_CACHE_KEY);
+        $cacheItem = $this->workersCacheItem();
 
         $workers = $cacheItem->get() ?? [];
 
@@ -105,5 +111,21 @@ final readonly class SharedCacheStreamWorkerManager implements StreamWorkerManag
         $workerBucketItem->set($currentValue);
 
         $this->cacheItemPool->save($workerBucketItem);
+    }
+
+    public function hasRegisteredWorkers(): bool
+    {
+        return !empty($this->workersCacheItem()->get());
+    }
+
+    private function workersCacheItem(): CacheItemInterface
+    {
+        return $this->workers->getItem(self::WORKERS_CACHE_KEY);
+    }
+
+    public function clear(): void
+    {
+        $this->cacheItemPool->clear();
+        $this->workers->clear();
     }
 }

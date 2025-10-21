@@ -62,7 +62,7 @@ final readonly class Client
         return 0 !== $this->availableEventsCount();
     }
 
-    public function listenForMessages(WorkerId $workerId): void
+    public function listenForMessages(): void
     {
         if (null === $this->connection) {
             throw CannotFetchMessages::beforeConnectionHasBeenEstablished();
@@ -118,6 +118,11 @@ final readonly class Client
     public function detachWorker(WorkerId $workerId): void
     {
         $this->availableEvents->detachWorker($workerId);
+
+        if ($this->availableEvents->hasNoWorkersRunning()) {
+            $this->sharedProcessCommunication->flagCatchupIsNotInProgress();
+            $this->availableEvents->clear(ApplicationId::fromString($this->config->eventSourcererApplicationId));
+        }
     }
 
     public function flagCatchupComplete(): void

@@ -40,12 +40,12 @@ final readonly class BucketedAvailableEvents implements AvailableEvents
 
     public function remove(CacheItemInterface $availableEvents, array $event, int $index): void
     {
-
     }
 
-    public function removeAll(ApplicationId $applicationId): void
+    public function clear(ApplicationId $applicationId): void
     {
-
+        $this->streamBuckets->clear();
+        $this->streamWorkerManager->clear();
     }
 
     public function count(ApplicationId $applicationId): int
@@ -74,5 +74,15 @@ final readonly class BucketedAvailableEvents implements AvailableEvents
     public function detachWorker(WorkerId $workerId): void
     {
         $this->streamWorkerManager->detachWorker($workerId, $this->streamBuckets->bucketIndexes());
+    }
+
+    public function hasWorkersRunning(): bool
+    {
+        return $this->streamWorkerManager->hasRegisteredWorkers();
+    }
+
+    public function hasNoWorkersRunning(): bool
+    {
+        return !$this->hasWorkersRunning();
     }
 }
