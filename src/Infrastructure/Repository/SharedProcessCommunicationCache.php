@@ -89,4 +89,9 @@ final readonly class SharedProcessCommunicationCache implements SharedProcessCom
 
         $this->cacheItemPool->save($cacheItem);
     }
+
+    public function clear(): void
+    {
+        $this->cacheItemPool->clear();
+    }
 }

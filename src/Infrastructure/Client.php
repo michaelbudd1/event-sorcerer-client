@@ -120,7 +120,7 @@ final readonly class Client
         $this->availableEvents->detachWorker($workerId);
 
         if ($this->availableEvents->hasNoWorkersRunning()) {
-            $this->sharedProcessCommunication->flagCatchupIsNotInProgress();
+            $this->sharedProcessCommunication->clear();
             $this->availableEvents->clear(ApplicationId::fromString($this->config->eventSourcererApplicationId));
         }
     }

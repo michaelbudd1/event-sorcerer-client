@@ -22,4 +22,6 @@ interface SharedProcessCommunication
     public function addEventCurrentlyBeingProcessed(int $allStreamCheckpoint): void;
 
     public function removeAll(): void;
+
+    public function clear(): void;
 }
