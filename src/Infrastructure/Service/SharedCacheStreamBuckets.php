@@ -49,13 +49,6 @@ final readonly class SharedCacheStreamBuckets implements StreamBuckets
             }
         }
 
-        echo 'ALL BUCKETS ARE EMPTY!' . PHP_EOL;
-
-        foreach ($bucketIndexes as $bucketIndex) {
-            echo sprintf('Bucket has %d events', $this->buckets[$bucketIndex]->eventCount());
-        }
-
-        die;
         return null;
     }
 
