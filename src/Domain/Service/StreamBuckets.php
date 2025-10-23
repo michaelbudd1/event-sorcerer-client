@@ -19,4 +19,6 @@ interface StreamBuckets
     public function count(): int;
 
     public function clear(): void;
+
+    public function listEvents(): iterable;
 }

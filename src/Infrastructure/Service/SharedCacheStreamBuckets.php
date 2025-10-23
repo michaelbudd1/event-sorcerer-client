@@ -80,4 +80,11 @@ final readonly class SharedCacheStreamBuckets implements StreamBuckets
             $bucket->clear();
         }
     }
+
+    public function listEvents(): iterable
+    {
+        foreach ($this->buckets as $bucket) {
+            yield from $bucket->listEvents();
+        }
+    }
 }

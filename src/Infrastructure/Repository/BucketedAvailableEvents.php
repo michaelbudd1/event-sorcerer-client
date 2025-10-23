@@ -33,9 +33,9 @@ final readonly class BucketedAvailableEvents implements AvailableEvents
 
     public function fetchOne(WorkerId $workerId, ApplicationId $applicationId): ?array
     {
-        $bucketIndex = $this->streamWorkerManager->bucketsForWorkerId($workerId);
+        $bucketIndexes = $this->streamWorkerManager->bucketsForWorkerId($workerId);
 
-        return $this->streamBuckets->fetchOneEvent($bucketIndex);
+        return $this->streamBuckets->fetchOneEvent($bucketIndexes);
     }
 
     public function remove(CacheItemInterface $availableEvents, array $event, int $index): void
@@ -55,15 +55,12 @@ final readonly class BucketedAvailableEvents implements AvailableEvents
 
     public function ack(StreamId $stream, Checkpoint $allStreamCheckpoint): void
     {
+        // not needed because we remove event from the cache as soon as we fetch it
     }
 
     public function list(ApplicationId $applicationId): iterable
     {
-    }
-
-    private static function firstCheckpointAvailable(array $availableEvents): int
-    {
-
+        yield from $this->streamBuckets->listEvents();
     }
 
     public function declareWorker(WorkerId $workerId, ApplicationId $applicationId): void

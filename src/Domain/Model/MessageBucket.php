@@ -158,4 +158,13 @@ final readonly class MessageBucket
     {
         return $this->events->getItem(self::UNIQUE_STREAMS);
     }
+
+    public function listEvents(): iterable
+    {
+        $allEventsIndexesCacheItem = $this->events->getItem(self::ALL_EVENTS)->get() ?? [];
+
+        foreach ($allEventsIndexesCacheItem as $allEventIndex) {
+            yield $this->events->getItem($allEventIndex);
+        }
+    }
 }
