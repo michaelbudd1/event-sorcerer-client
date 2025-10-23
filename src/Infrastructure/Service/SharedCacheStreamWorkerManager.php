@@ -27,11 +27,13 @@ final readonly class SharedCacheStreamWorkerManager implements StreamWorkerManag
 
     private function reconfigure(array $bucketIndexes): void
     {
+        $workers = $this->workersCacheItem()->get() ?? [];
+
         $workerIterator = new \InfiniteIterator(
-            new ArrayIterator(
-                $this->workersCacheItem()->get() ?? []
-            )
+            new ArrayIterator($workers)
         );
+
+        $this->resetMappings($bucketIndexes, $workers);
 
         $workerIterator->rewind();
 
@@ -127,5 +129,16 @@ final readonly class SharedCacheStreamWorkerManager implements StreamWorkerManag
     {
         $this->cacheItemPool->clear();
         $this->workers->clear();
+    }
+
+    private function resetMappings(array $bucketIndexes, array $workers): void
+    {
+        foreach ($bucketIndexes as $bucketIndex) {
+            $this->cacheItemPool->deleteItem(self::bucketIndexCacheKey($bucketIndex));
+        }
+
+        foreach ($workers as $workerId) {
+            $this->cacheItemPool->deleteItem($workerId);
+        }
     }
 }

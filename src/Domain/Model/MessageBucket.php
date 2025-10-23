@@ -164,7 +164,6 @@ final readonly class MessageBucket
         $allEventsIndexesCacheItem = $this->events->getItem(self::ALL_EVENTS)->get() ?? [];
 
         foreach ($allEventsIndexesCacheItem as $allEventIndex) {
-            var_dump($allEventIndex); die;
             yield $this->events->getItem($allEventIndex)->get();
         }
     }
