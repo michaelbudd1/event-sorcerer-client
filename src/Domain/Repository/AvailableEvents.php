@@ -31,4 +31,6 @@ interface AvailableEvents
     public function hasWorkersRunning(): bool;
 
     public function hasNoWorkersRunning(): bool;
+
+    public function summary(ApplicationId $applicationId): array;
 }

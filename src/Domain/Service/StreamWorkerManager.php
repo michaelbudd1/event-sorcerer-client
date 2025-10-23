@@ -19,5 +19,7 @@ interface StreamWorkerManager
 
     public function hasRegisteredWorkers(): bool;
 
+    public function registeredWorkers(): array;
+
     public function clear(): void;
 }

@@ -141,4 +141,9 @@ final readonly class SharedCacheStreamWorkerManager implements StreamWorkerManag
             $this->cacheItemPool->deleteItem($workerId);
         }
     }
+
+    public function registeredWorkers(): array
+    {
+        return $this->workersCacheItem()->get() ?? [];
+    }
 }

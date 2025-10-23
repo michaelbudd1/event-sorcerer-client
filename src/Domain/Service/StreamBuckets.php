@@ -21,4 +21,6 @@ interface StreamBuckets
     public function clear(): void;
 
     public function listEvents(): iterable;
+
+    public function mappings(): array;
 }

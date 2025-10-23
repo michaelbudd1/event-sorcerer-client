@@ -108,6 +108,55 @@ final class ClientTest extends TestCase
         );
     }
 
+    #[Test]
+    public function itFetchesEventsFromBucketsEvenly(): void
+    {
+        $this->addTestEvents();
+
+        $this->streamWorkerManager->declareWorker($this->worker1, $this->streamBuckets->bucketIndexes());
+
+        $randomStreams = [
+            'de40b841-85f5-4b8a-9309-581563ce3b57',
+            '3c27f3fd-97a5-4391-bff3-9e619452dfcb',
+            '0f7dbd93-83a1-4570-b613-e05e85b0ef34',
+        ];
+
+        for ($i = 0; $i <= 10; $i++) {
+            $this->availableEvents->add(
+                $this->applicationId,
+                [
+                    'allSequence' => $i,
+                    'stream' => $randomStreams[random_int(0, 2)],
+                    'body' => sprintf('This is event %d', $i),
+                ]
+            );
+        }
+
+        for ($i = 0; $i <= 10; $i++) {
+            $this->assertNotNull($this->availableEvents->fetchOne($this->worker1, $this->applicationId));
+        }
+
+        $this->assertNull($this->availableEvents->fetchOne($this->worker1, $this->applicationId));
+    }
+
+    #[Test]
+    public function itCreatesSummary(): void
+    {
+        $this->addTestEvents();
+
+        $this->streamWorkerManager->declareWorker($this->worker1, $this->streamBuckets->bucketIndexes());
+
+        $this->assertEquals(
+            [
+                'numberOfEventsToProcess' => 8,
+                'workerBucketDistribution' => [
+                    'worker1' => [0,1,2],
+                ],
+            ],
+            $this->availableEvents->summary($this->applicationId)
+        );
+    }
+
     private function addTestEvents(): void
     {
         foreach (Yaml::parseFile(__DIR__ . self::MOCK_DATA_FILE) as $event) {

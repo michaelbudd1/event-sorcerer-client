@@ -82,4 +82,18 @@ final readonly class BucketedAvailableEvents implements AvailableEvents
     {
         return !$this->hasWorkersRunning();
     }
+
+    public function summary(ApplicationId $applicationId): array
+    {
+        $bucketMaps = [];
+
+        foreach ($this->streamWorkerManager->registeredWorkers() as $worker) {
+            $bucketMaps[$worker] = $this->streamWorkerManager->bucketsForWorkerId(WorkerId::fromString($worker));
+        }
+
+        return [
+            'numberOfEventsToProcess'  => $this->count($applicationId),
+            'workerBucketDistribution' => $bucketMaps,
+        ];
+    }
 }

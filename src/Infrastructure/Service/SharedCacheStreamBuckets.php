@@ -87,4 +87,11 @@ final readonly class SharedCacheStreamBuckets implements StreamBuckets
             yield from $bucket->listEvents();
         }
     }
+
+    public function mappings(): array
+    {
+        $mappings = [];
+
+        return [];
+    }
 }

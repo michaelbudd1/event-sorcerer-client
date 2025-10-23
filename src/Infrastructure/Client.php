@@ -206,6 +206,11 @@ final readonly class Client
         );
     }
 
+    public function summary(ApplicationId $applicationId): array
+    {
+        return $this->availableEvents->summary($applicationId);
+    }
+
     private static function jsonDecodeErrorMessage(string $parsedEvent): string
     {
         return sprintf(
