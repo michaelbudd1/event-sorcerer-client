@@ -40,9 +40,11 @@ final readonly class MessageBucket
         $allEventIndexesCacheItem = $this->events->getItem(self::ALL_EVENTS);
         $allEventIndexes = $allEventIndexesCacheItem->get();
 
-//        if (empty($allEventIndexes)) {
-//            return null;
-//        }
+        if (empty($allEventIndexes)) {
+            echo 'All event indexes is empty!!!';
+
+            return null;
+        }
 
         $minIndex = min(array_keys($allEventIndexes));
         $eventCacheKey = $allEventIndexes[$minIndex];
