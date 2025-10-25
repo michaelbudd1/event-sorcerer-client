@@ -84,6 +84,10 @@ final readonly class MessageBucket
 
     private function cacheIndividualEvent(array $event, string $cacheItemKey): void
     {
+        if ($event === null) {
+            var_dump('ahghghghgghh why?'); die;
+        }
+
         $cacheItem = $this->events->getItem($cacheItemKey);
 
         $cacheItem->set($event);
