@@ -41,8 +41,6 @@ final readonly class MessageBucket
         $allEventIndexes = $allEventIndexesCacheItem->get();
 
         if (empty($allEventIndexes)) {
-            echo 'All event indexes is empty!!!' . PHP_EOL;
-
             return null;
         }
 
@@ -50,12 +48,6 @@ final readonly class MessageBucket
         $eventCacheKey = $allEventIndexes[$minIndex];
 
         $fetchedEvent = $this->events->getItem($eventCacheKey)->get();
-
-        if (null === $fetchedEvent) {
-            var_dump('was looking for', $minIndex, $allEventIndexes);
-
-//            return null;
-        }
 
         unset($allEventIndexes[$minIndex]);
 
@@ -84,10 +76,6 @@ final readonly class MessageBucket
 
     private function cacheIndividualEvent(array $event, string $cacheItemKey): void
     {
-        if ($event === null) {
-            var_dump('ahghghghgghh why?'); die;
-        }
-
         $cacheItem = $this->events->getItem($cacheItemKey);
 
         $cacheItem->set($event);
