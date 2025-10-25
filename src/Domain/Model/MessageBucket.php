@@ -40,18 +40,18 @@ final readonly class MessageBucket
         $allEventIndexesCacheItem = $this->events->getItem(self::ALL_EVENTS);
         $allEventIndexes = $allEventIndexesCacheItem->get();
 
-        if (empty($allEventIndexes)) {
-            return null;
-        }
+//        if (empty($allEventIndexes)) {
+//            return null;
+//        }
 
         $minIndex = min(array_keys($allEventIndexes));
         $eventCacheKey = $allEventIndexes[$minIndex];
 
         $fetchedEvent = $this->events->getItem($eventCacheKey)->get();
 
-        if (null === $fetchedEvent) {
-            return null;
-        }
+//        if (null === $fetchedEvent) {
+//            return null;
+//        }
 
         unset($allEventIndexes[$minIndex]);
 
