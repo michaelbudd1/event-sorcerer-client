@@ -215,7 +215,7 @@ final readonly class Client
     {
         return sprintf(
             'An error occurred attempting to decode message: %s',
-            $parsedEvent
+            substr($parsedEvent, 0, 50)
         );
     }
 
