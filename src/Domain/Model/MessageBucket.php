@@ -56,11 +56,9 @@ final readonly class MessageBucket
         $this->events->deleteItem($eventCacheKey);
         $this->events->save($allEventIndexesCacheItem);
 
-        if (null === $fetchedEvent) {
-            var_dump($allEventIndexes, $minIndex); die;
+        if (null !== $fetchedEvent) {
+            $this->decrementNumberOfEventsForStream($fetchedEvent['stream']);
         }
-
-        $this->decrementNumberOfEventsForStream($fetchedEvent['stream']);
 
         return $fetchedEvent;
     }
