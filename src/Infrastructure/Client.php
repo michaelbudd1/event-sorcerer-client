@@ -161,22 +161,18 @@ final readonly class Client
         Checkpoint $streamCheckpoint,
         Checkpoint $allStreamCheckpoint
     ): void {
-        if (null === $this->connection) {
-            $this->connect();
-        }
+        $conn = $this->connection ?: $this->connect()->connection;
 
-        $this
-            ->connection
-            ->then(function (ConnectionInterface $connection) use ($stream, $streamCheckpoint, $allStreamCheckpoint) {
-                $connection->write(
-                    CreateMessage::forAcknowledgement(
-                        $stream,
-                        ApplicationId::fromString($this->config->eventSourcererApplicationId),
-                        $streamCheckpoint,
-                        $allStreamCheckpoint
-                    )
-                );
-            });
+        $conn->then(function (ConnectionInterface $connection) use ($stream, $streamCheckpoint, $allStreamCheckpoint) {
+            $connection->write(
+                CreateMessage::forAcknowledgement(
+                    $stream,
+                    ApplicationId::fromString($this->config->eventSourcererApplicationId),
+                    $streamCheckpoint,
+                    $allStreamCheckpoint
+                )
+            );
+        });
 
         $this->sharedProcessCommunication->removeEventCurrentlyBeingProcessed($allStreamCheckpoint->value);
     }
