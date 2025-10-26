@@ -168,7 +168,7 @@ final readonly class Client
         $this
             ->connection
             ->then(function (ConnectionInterface $connection) use ($stream, $streamCheckpoint, $allStreamCheckpoint) {
-                $connection->end(
+                $connection->write(
                     CreateMessage::forAcknowledgement(
                         $stream,
                         ApplicationId::fromString($this->config->eventSourcererApplicationId),
@@ -177,8 +177,6 @@ final readonly class Client
                     )
                 );
             });
-
-        $this->availableEvents->ack($stream, $allStreamCheckpoint);
 
         $this->sharedProcessCommunication->removeEventCurrentlyBeingProcessed($allStreamCheckpoint->value);
     }
