@@ -161,6 +161,10 @@ final readonly class Client
         Checkpoint $streamCheckpoint,
         Checkpoint $allStreamCheckpoint
     ): void {
+        if (null === $this->connection) {
+            $this->connect();
+        }
+
         $this
             ->connection
             ->then(function (ConnectionInterface $connection) use ($stream, $streamCheckpoint, $allStreamCheckpoint) {
