@@ -16,6 +16,7 @@ use PearTreeWebLtd\EventSourcererMessageUtilities\Model\MessageMarkup;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Model\MessageType;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Model\StreamId;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Service\CreateMessage;
+use React\EventLoop\Loop;
 use React\Promise\Promise;
 use React\Promise\PromiseInterface;
 use React\Socket\ConnectionInterface;
@@ -39,7 +40,7 @@ final readonly class Client
             $this->config,
             $this->availableEvents,
             $this->sharedProcessCommunication,
-            (new Connector())
+            (new Connector(loop: Loop::get()))
                 ->connect(
                     sprintf(
                         '%s:%d',
