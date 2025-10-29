@@ -39,57 +39,71 @@ final readonly class Client
 
     public function connect(): self
     {
-        $externalConnection = null;
-
-        $loop = Loop::get();
-
-        $client = new self(
+        return new self(
             $this->config,
             $this->availableEvents,
             $this->sharedProcessCommunication,
-            (new Connector(loop: $loop))
+            (new Connector())
                 ->connect(
                     sprintf(
                         '%s:%d',
                         $this->config->serverHost,
                         $this->config->serverPort
                     )
-                )->then(
-                    fn (ConnectionInterface $connection) => $externalConnection = $connection
                 )
         );
-
-        $server = new SocketServer(self::IPC_SERVER_HOST, [], $loop);
-        $workers = [];
-
-        $server->on('connection', function (ConnectionInterface $worker) use (&$workers, &$externalConnection) {
-            echo "Worker connected\n";
-            $workers[] = $worker;
-
-            // Forward data from external connection to all workers
-            if ($externalConnection) {
-                $externalConnection->on('data', function ($data) use ($workers) {
-                    foreach ($workers as $w) {
-                        $w->write($data);
-                    }
-                });
-            }
-
-            // Forward data from worker to external connection
-            $worker->on('data', function ($data) use ($externalConnection) {
-                if ($externalConnection) {
-                    $externalConnection->write($data);
-                }
-            });
-
-            $worker->on('close', function () use (&$workers, $worker) {
-                $workers = array_filter($workers, fn($w) => $w !== $worker);
-            });
-        });
-
-        $loop->run();
-
-        return $client;
+//
+//        $externalConnection = null;
+//
+//        $loop = Loop::get();
+//
+//        $client = new self(
+//            $this->config,
+//            $this->availableEvents,
+//            $this->sharedProcessCommunication,
+//            (new Connector(loop: $loop))
+//                ->connect(
+//                    sprintf(
+//                        '%s:%d',
+//                        $this->config->serverHost,
+//                        $this->config->serverPort
+//                    )
+//                )->then(
+//                    fn (ConnectionInterface $connection) => $externalConnection = $connection
+//                )
+//        );
+//
+//        $server = new SocketServer(self::IPC_SERVER_HOST, [], $loop);
+//        $workers = [];
+//
+//        $server->on('connection', function (ConnectionInterface $worker) use (&$workers, &$externalConnection) {
+//            echo "Worker connected\n";
+//            $workers[] = $worker;
+//
+//            // Forward data from external connection to all workers
+//            if ($externalConnection) {
+//                $externalConnection->on('data', function ($data) use ($workers) {
+//                    foreach ($workers as $w) {
+//                        $w->write($data);
+//                    }
+//                });
+//            }
+//
+//            // Forward data from worker to external connection
+//            $worker->on('data', function ($data) use ($externalConnection) {
+//                if ($externalConnection) {
+//                    $externalConnection->write($data);
+//                }
+//            });
+//
+//            $worker->on('close', function () use (&$workers, $worker) {
+//                $workers = array_filter($workers, fn($w) => $w !== $worker);
+//            });
+//        });
+//
+//        $loop->run();
+//
+//        return $client;
     }
 
     public function availableEventsCount(): int
@@ -203,11 +217,11 @@ final readonly class Client
         Checkpoint $streamCheckpoint,
         Checkpoint $allStreamCheckpoint
     ): void {
-        $this
-            ->createInternalConnection()
-
 //        $this
-//            ->connection
+//            ->createInternalConnection()
+var_dump($this->connection); die;
+        $this
+            ->connection
             ->then(function (ConnectionInterface $connection) use ($stream, $streamCheckpoint, $allStreamCheckpoint) {
                 $connection->write(
                     CreateMessage::forAcknowledgement(
