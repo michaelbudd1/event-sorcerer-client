@@ -21,6 +21,7 @@ use React\Promise\Promise;
 use React\Promise\PromiseInterface;
 use React\Socket\ConnectionInterface;
 use React\Socket\Connector;
+use React\Socket\SocketServer;
 
 final readonly class Client
 {
@@ -31,16 +32,20 @@ final readonly class Client
         private Config $config,
         private AvailableEvents $availableEvents,
         private SharedProcessCommunication $sharedProcessCommunication,
+        private ?Loop $loop = null,
         private ?PromiseInterface $connection = null
     ) {}
 
     public function connect(): self
     {
+        $loop = Loop::get();
+
         return new self(
             $this->config,
             $this->availableEvents,
             $this->sharedProcessCommunication,
-            (new Connector(loop: Loop::get()))
+            $loop,
+            (new Connector(loop: $loop))
                 ->connect(
                     sprintf(
                         '%s:%d',
@@ -91,8 +96,35 @@ final readonly class Client
                     $this->addEventsForProcessing($applicationId, $events);
                 });
 
+                // Create IPC server for workers
+                $ipcServer = new SocketServer('unix://eventsourcerer-shared-socket.sock', [], $this->loop);
+                $workers = [];
+
+                $ipcServer->on('connection', function (ConnectionInterface $worker) use (&$workers, &$connection) {
+                    echo "Worker connected\n";
+                    $workers[] = $worker;
+
+                    // Forward data from external connection to all workers
+                    $connection?->on('data', function ($data) use ($workers) {
+                        foreach ($workers as $w) {
+                            $w->write($data);
+                        }
+                    });
+
+                    // Forward data from worker to external connection
+                    $worker->on('data', function ($data) use ($connection) {
+                        $connection?->write($data);
+                    });
+
+                    $worker->on('close', function () use (&$workers, $worker) {
+                        $workers = array_filter($workers, static fn ($w) => $w !== $worker);
+                    });
+                });
+
                 return new Promise(static fn () => $connection);
             });
+
+        $this->loop->run();
     }
 
     public function fetchOneMessage(WorkerId $workerId): ?array
