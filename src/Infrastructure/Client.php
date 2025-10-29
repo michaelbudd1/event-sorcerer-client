@@ -32,20 +32,16 @@ final readonly class Client
         private Config $config,
         private AvailableEvents $availableEvents,
         private SharedProcessCommunication $sharedProcessCommunication,
-        private ?Loop $loop = null,
         private ?PromiseInterface $connection = null
     ) {}
 
     public function connect(): self
     {
-        $loop = Loop::get();
-
         return new self(
             $this->config,
             $this->availableEvents,
             $this->sharedProcessCommunication,
-            $loop,
-            (new Connector(loop: $loop))
+            (new Connector())
                 ->connect(
                     sprintf(
                         '%s:%d',
@@ -96,8 +92,10 @@ final readonly class Client
                     $this->addEventsForProcessing($applicationId, $events);
                 });
 
+                $loop = Loop::get();
+
                 // Create IPC server for workers
-                $ipcServer = new SocketServer('unix://eventsourcerer-shared-socket.sock', [], $this->loop);
+                $ipcServer = new SocketServer('unix://eventsourcerer-shared-socket.sock', [], $loop);
                 $workers = [];
 
                 $ipcServer->on('connection', function (ConnectionInterface $worker) use (&$workers, &$connection) {
@@ -121,10 +119,10 @@ final readonly class Client
                     });
                 });
 
+                $loop?->run();
+
                 return new Promise(static fn () => $connection);
             });
-
-        $this->loop->run();
     }
 
     public function fetchOneMessage(WorkerId $workerId): ?array
