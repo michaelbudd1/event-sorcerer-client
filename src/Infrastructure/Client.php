@@ -92,10 +92,8 @@ final readonly class Client
                     $this->addEventsForProcessing($applicationId, $events);
                 });
 
-                $loop = Loop::get();
-
                 // Create IPC server for workers
-                $ipcServer = new SocketServer('unix://eventsourcerer-shared-socket.sock', [], $loop);
+                $ipcServer = new SocketServer('unix://eventsourcerer-shared-socket.sock');
                 $workers = [];
 
                 $ipcServer->on('connection', function (ConnectionInterface $worker) use (&$workers, &$connection) {
@@ -118,8 +116,6 @@ final readonly class Client
                         $workers = array_filter($workers, static fn ($w) => $w !== $worker);
                     });
                 });
-
-                $loop?->run();
 
                 return new Promise(static fn () => $connection);
             });
