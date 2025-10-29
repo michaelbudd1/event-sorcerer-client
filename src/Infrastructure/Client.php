@@ -25,7 +25,7 @@ use React\Socket\SocketServer;
 
 final readonly class Client
 {
-    private const string IPC_SERVER_HOST = 'unix:///tmp/eventsourcerer-shared-socket.sock';
+    private const string IPC_SERVER_HOST = 'unix://eventsourcerer-shared-socket.sock';
 
     /**
      * @param PromiseInterface<ConnectionInterface>|null $connection
