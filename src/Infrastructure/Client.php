@@ -37,6 +37,7 @@ final readonly class Client
 
     public function connect(): self
     {
+        // @todo this only needs to connect to the IPC server
         return new self(
             $this->config,
             $this->availableEvents,
@@ -50,6 +51,56 @@ final readonly class Client
                     )
                 )
         );
+    }
+
+    public function runIPCServer(): void
+    {
+        $loop = Loop::get();
+
+        $externalConnection = null;
+
+        (new Connector(loop: $loop))
+            ->connect(
+                sprintf(
+                    '%s:%d',
+                    $this->config->serverHost,
+                    $this->config->serverPort
+                )
+            )->then(function (ConnectionInterface $connection) use (&$externalConnection) {
+                $externalConnection = $connection;
+
+                echo 'Connected to external service' . PHP_EOL;
+            });
+
+
+        // Create IPC server for workers
+        $server = new SocketServer('unix://eventsourcerer-shared-socket.sock', [], $loop);
+        $workers = [];
+
+        $server->on('connection', function (ConnectionInterface $worker) use (&$workers, &$externalConnection) {
+            echo 'Worker connected' . PHP_EOL;
+            $workers[] = $worker;
+
+            // Forward data from external connection to all workers
+            $externalConnection?->on('data', function ($data) use ($workers) {
+                foreach ($workers as $w) {
+                    $w->write($data);
+                }
+            });
+
+            // Forward data from worker to external connection
+            $worker->on('data', function ($data) use ($externalConnection) {
+                $externalConnection?->write($data);
+            });
+
+            $worker->on('close', function () use (&$workers, $worker) {
+                $workers = array_filter($workers, static fn ($w) => $w !== $worker);
+            });
+        });
+
+        echo 'Main process running' . PHP_EOL;
+
+        $loop?->run();
     }
 
     public function availableEventsCount(): int
@@ -66,6 +117,8 @@ final readonly class Client
 
     public function listenForMessages(): void
     {
+        // @todo this should connect to the IPC server
+
         if (null === $this->connection) {
             throw CannotFetchMessages::beforeConnectionHasBeenEstablished();
         }
