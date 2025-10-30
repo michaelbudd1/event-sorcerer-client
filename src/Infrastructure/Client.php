@@ -84,6 +84,10 @@ final readonly class Client
                     );
                 }
 
+                $connection->on('data', function (string $events) use ($applicationId) {
+                    $this->addEventsForProcessing($applicationId, $events);
+                });
+
                 echo 'Connected to external service' . PHP_EOL;
             });
 
@@ -96,17 +100,11 @@ final readonly class Client
             $workers[] = $worker;
 
             // Forward data from external connection to all workers
-            $externalConnection?->on('data', function (string $events) use ($applicationId) {
-                $this->addEventsForProcessing($applicationId, $events);
+//            $externalConnection?->on('data', function (string $events) use ($applicationId) {
 //                foreach ($workers as $w) {
 //                    $w->write($data);
 //                }
-            });
-
-            // Forward data from worker to external connection
-            $worker->on('data', function ($data) use ($externalConnection) {
-                $externalConnection?->write($data);
-            });
+//            });
 
             $worker->on('close', function () use (&$workers, $worker) {
                 $workers = array_filter($workers, static fn ($w) => $w !== $worker);
