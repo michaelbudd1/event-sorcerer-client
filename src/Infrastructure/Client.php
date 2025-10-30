@@ -59,6 +59,8 @@ final readonly class Client
 
         $externalConnection = null;
 
+        $applicationId = ApplicationId::fromString($this->config->eventSourcererApplicationId);
+
         (new Connector(loop: $loop))
             ->connect(
                 sprintf(
@@ -66,26 +68,39 @@ final readonly class Client
                     $this->config->serverHost,
                     $this->config->serverPort
                 )
-            )->then(function (ConnectionInterface $connection) use (&$externalConnection) {
+            )->then(function (ConnectionInterface $connection) use ($applicationId, &$externalConnection) {
                 $externalConnection = $connection;
+
+                $connection->write(CreateMessage::forProvidingIdentity($applicationId, $this->config->applicationType));
+
+                if (!$this->sharedProcessCommunication->catchupInProgress()) {
+                    $this->sharedProcessCommunication->flagCatchupIsInProgress();
+
+                    $connection->write(
+                        CreateMessage::forCatchupRequest(
+                            StreamId::fromString('*'),
+                            $applicationId
+                        )
+                    );
+                }
 
                 echo 'Connected to external service' . PHP_EOL;
             });
-
 
         // Create IPC server for workers
         $server = new SocketServer('unix://eventsourcerer-shared-socket.sock', [], $loop);
         $workers = [];
 
-        $server->on('connection', function (ConnectionInterface $worker) use (&$workers, &$externalConnection) {
+        $server->on('connection', function (ConnectionInterface $worker) use ($applicationId, &$workers, &$externalConnection) {
             echo 'Worker connected' . PHP_EOL;
             $workers[] = $worker;
 
             // Forward data from external connection to all workers
-            $externalConnection?->on('data', function ($data) use ($workers) {
-                foreach ($workers as $w) {
-                    $w->write($data);
-                }
+            $externalConnection?->on('data', function (string $events) use ($applicationId) {
+                $this->addEventsForProcessing($applicationId, $events);
+//                foreach ($workers as $w) {
+//                    $w->write($data);
+//                }
             });
 
             // Forward data from worker to external connection
