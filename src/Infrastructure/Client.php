@@ -106,6 +106,10 @@ final readonly class Client
 //                }
 //            });
 
+            $worker->on('data', function ($data) use ($externalConnection) {
+                $externalConnection?->write($data);
+            });
+
             $worker->on('close', function () use (&$workers, $worker) {
                 $workers = array_filter($workers, static fn ($w) => $w !== $worker);
             });
@@ -254,9 +258,9 @@ final readonly class Client
         Checkpoint $streamCheckpoint,
         Checkpoint $allStreamCheckpoint
     ): void {
-        $this
-            ->connection
-            ->then(function (ConnectionInterface $connection) use ($stream, $streamCheckpoint, $allStreamCheckpoint) {
+        $connector = new Connector();
+        $connector->connect('unix://eventsourcerer-shared-socket.sock')->then(
+            function (ConnectionInterface $connection) use ($stream,  $streamCheckpoint, $allStreamCheckpoint) {
                 $connection->write(
                     CreateMessage::forAcknowledgement(
                         $stream,
@@ -265,7 +269,23 @@ final readonly class Client
                         $allStreamCheckpoint
                     )
                 );
-            });
+
+                $connection->close();
+            }
+        );
+
+//        $this
+//            ->connection
+//            ->then(function (ConnectionInterface $connection) use ($stream, $streamCheckpoint, $allStreamCheckpoint) {
+//                $connection->write(
+//                    CreateMessage::forAcknowledgement(
+//                        $stream,
+//                        ApplicationId::fromString($this->config->eventSourcererApplicationId),
+//                        $streamCheckpoint,
+//                        $allStreamCheckpoint
+//                    )
+//                );
+//            });
 
         $this->sharedProcessCommunication->removeEventCurrentlyBeingProcessed($allStreamCheckpoint->value);
     }
