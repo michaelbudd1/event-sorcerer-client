@@ -91,6 +91,10 @@ final readonly class Client
 
         $server->on('connection', function (ConnectionInterface $worker) use ($applicationId, &$workers, &$externalConnection) {
             echo 'Worker connected' . PHP_EOL;
+var_dump($worker); die;
+            $this->availableEvents->declareWorker($workerId, $applicationId);
+
+
             $workers[] = $worker;
 
             // Forward data from external connection to all workers
@@ -126,84 +130,23 @@ final readonly class Client
         return 0 !== $this->availableEventsCount();
     }
 
-    public function listenForMessages(): void
-    {
-        // @todo this should connect to the IPC server
-
-        if (null === $this->connection) {
-            throw CannotFetchMessages::beforeConnectionHasBeenEstablished();
-        }
-
-        $applicationId = ApplicationId::fromString($this->config->eventSourcererApplicationId);
-
-        $this
-            ->connection
-            ->then(function (ConnectionInterface $connection) use ($applicationId) {
-                $connection->write(CreateMessage::forProvidingIdentity($applicationId, $this->config->applicationType));
-
-                if (!$this->sharedProcessCommunication->catchupInProgress()) {
-                    $this->sharedProcessCommunication->flagCatchupIsInProgress();
-
-                    $connection->write(
-                        CreateMessage::forCatchupRequest(
-                            StreamId::fromString('*'),
-                            $applicationId
-                        )
-                    );
-                }
-
-                $connection->on('data', function (string $events) use ($applicationId)  {
-                    $this->addEventsForProcessing($applicationId, $events);
-                });
-
-                // Create IPC server for workers
-                $ipcServer = new SocketServer('unix://eventsourcerer-shared-socket.sock');
-                $workers = [];
-
-                $ipcServer->on('connection', function (ConnectionInterface $worker) use (&$workers, &$connection) {
-                    echo "Worker connected\n";
-                    $workers[] = $worker;
-
-                    // Forward data from external connection to all workers
-                    $connection?->on('data', function ($data) use ($workers) {
-                        foreach ($workers as $w) {
-                            $w->write($data);
-                        }
-                    });
-
-                    // Forward data from worker to external connection
-                    $worker->on('data', function ($data) use ($connection) {
-                        $connection?->write($data);
-                    });
-
-                    $worker->on('close', function () use (&$workers, $worker) {
-                        $workers = array_filter($workers, static fn ($w) => $w !== $worker);
-                    });
-                });
-
-                return new Promise(static fn () => $connection);
-            });
-    }
-
     public function fetchOneMessage(WorkerId $workerId): ?array
     {
         $applicationId = ApplicationId::fromString($this->config->eventSourcererApplicationId);
 
-        $this->availableEvents->declareWorker($workerId, $applicationId);
+        return $this->availableEvents->fetchOne($workerId, $applicationId);
+//
+//        if (null === $message) {
+//            return null;
+//        }
+//
+//        if ($this->sharedProcessCommunication->messageIsAlreadyBeingProcessed($message['allSequence'])) {
+//            return $this->fetchOneMessage($workerId);
+//        }
 
-        $message = $this->availableEvents->fetchOne($workerId, $applicationId);
+//        $this->sharedProcessCommunication->addEventCurrentlyBeingProcessed($message['allSequence']);
 
-        if (null === $message) {
-            return null;
-        }
-
-        if ($this->sharedProcessCommunication->messageIsAlreadyBeingProcessed($message['allSequence'])) {
-            return $this->fetchOneMessage($workerId);
-        }
-
-        $this->sharedProcessCommunication->addEventCurrentlyBeingProcessed($message['allSequence']);
-
-        return $message;
+//        return $message;
     }
 
     public function detachWorker(WorkerId $workerId): void
