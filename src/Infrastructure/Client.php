@@ -215,7 +215,9 @@ final readonly class Client
             )
         );
 
-        $this->sharedProcessCommunication->removeEventCurrentlyBeingProcessed($allStreamCheckpoint->value);
+        $this->connection->close();
+
+//        $this->sharedProcessCommunication->removeEventCurrentlyBeingProcessed($allStreamCheckpoint->value);
     }
 
     public function writeNewEvent(
