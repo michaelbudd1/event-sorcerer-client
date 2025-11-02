@@ -252,34 +252,14 @@ final readonly class Client
         Checkpoint $streamCheckpoint,
         Checkpoint $allStreamCheckpoint
     ): void {
-        $connector = new Connector();
-        $connector->connect('unix://eventsourcerer-shared-socket.sock')->then(
-            function (ConnectionInterface $connection) use ($stream,  $streamCheckpoint, $allStreamCheckpoint) {
-                $connection->write(
-                    CreateMessage::forAcknowledgement(
-                        $stream,
-                        ApplicationId::fromString($this->config->eventSourcererApplicationId),
-                        $streamCheckpoint,
-                        $allStreamCheckpoint
-                    )
-                );
-
-                $connection->close();
-            }
+        $this->connection?->write(
+            CreateMessage::forAcknowledgement(
+                $stream,
+                ApplicationId::fromString($this->config->eventSourcererApplicationId),
+                $streamCheckpoint,
+                $allStreamCheckpoint
+            )
         );
-
-//        $this
-//            ->connection
-//            ->then(function (ConnectionInterface $connection) use ($stream, $streamCheckpoint, $allStreamCheckpoint) {
-//                $connection->write(
-//                    CreateMessage::forAcknowledgement(
-//                        $stream,
-//                        ApplicationId::fromString($this->config->eventSourcererApplicationId),
-//                        $streamCheckpoint,
-//                        $allStreamCheckpoint
-//                    )
-//                );
-//            });
 
         $this->sharedProcessCommunication->removeEventCurrentlyBeingProcessed($allStreamCheckpoint->value);
     }
