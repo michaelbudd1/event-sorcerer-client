@@ -55,6 +55,11 @@ final readonly class Client
         );
     }
 
+    public function connected(): bool
+    {
+        return null !== $this->connection;
+    }
+
     public function runIPCServer(): void
     {
         if (file_exists('./eventsourcerer-shared-socket.sock')) {
