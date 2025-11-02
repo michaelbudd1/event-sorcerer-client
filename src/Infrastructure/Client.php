@@ -7,7 +7,6 @@ namespace PearTreeWeb\EventSourcerer\Client\Infrastructure;
 use PearTreeWeb\EventSourcerer\Client\Domain\Model\WorkerId;
 use PearTreeWeb\EventSourcerer\Client\Domain\Repository\AvailableEvents;
 use PearTreeWeb\EventSourcerer\Client\Domain\Repository\SharedProcessCommunication;
-use PearTreeWeb\EventSourcerer\Client\Infrastructure\Exception\CannotFetchMessages;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Model\ApplicationId;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Model\Checkpoint;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Model\EventName;
@@ -17,8 +16,6 @@ use PearTreeWebLtd\EventSourcererMessageUtilities\Model\MessageType;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Model\StreamId;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Service\CreateMessage;
 use React\EventLoop\Loop;
-use React\Promise\Promise;
-use React\Promise\PromiseInterface;
 use React\Socket\ConnectionInterface;
 use React\Socket\Connector;
 use React\Socket\SocketServer;
@@ -39,14 +36,9 @@ final readonly class Client
     public function connect(): self
     {
         if (null !== $this->connection) {
-            echo 'already connected!' . PHP_EOL;
-
             return $this;
         }
 
-        echo 'connecting!' . PHP_EOL;
-
-        // @todo this only needs to connect to the IPC server
         return new self(
             $this->config,
             $this->availableEvents,
@@ -103,7 +95,7 @@ final readonly class Client
             });
 
         // Create IPC server for workers
-        $server = new SocketServer('unix://eventsourcerer-shared-socket.sock', [], $loop);
+        $server = new SocketServer('unix://eventsourcerer-shared-socket.sock');
         $workers = [];
 
         $server->on('connection', function (ConnectionInterface $worker) use ($applicationId, &$workers, &$externalConnection) {
