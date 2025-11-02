@@ -22,17 +22,18 @@ use React\Promise\PromiseInterface;
 use React\Socket\ConnectionInterface;
 use React\Socket\Connector;
 use React\Socket\SocketServer;
+use function React\Async\await;
 
 final readonly class Client
 {
     /**
-     * @param PromiseInterface<ConnectionInterface>|null $connection
+     * @param ConnectionInterface|null $connection
      */
     public function __construct(
         private Config $config,
         private AvailableEvents $availableEvents,
         private SharedProcessCommunication $sharedProcessCommunication,
-        private ?PromiseInterface $connection = null
+        private ?ConnectionInterface $connection = null
     ) {}
 
     public function connect(): self
@@ -42,14 +43,7 @@ final readonly class Client
             $this->config,
             $this->availableEvents,
             $this->sharedProcessCommunication,
-            (new Connector())
-                ->connect(
-                    sprintf(
-                        '%s:%d',
-                        $this->config->serverHost,
-                        $this->config->serverPort
-                    )
-                )
+            await((new Connector())->connect('unix://eventsourcerer-shared-socket.sock'))
         );
     }
 
@@ -345,13 +339,13 @@ final readonly class Client
 
     private function addEventToCache(ApplicationId $applicationId, array $decodedEvent): void
     {
-//        if ($this->availableEvents->count($applicationId) >= 100) {
-//            sleep(10);
-//
-//            $this->addEventToCache($applicationId, $decodedEvent);
-//
-//            return;
-//        }
+        if ($this->availableEvents->count($applicationId) >= 100) {
+            sleep(10);
+
+            $this->addEventToCache($applicationId, $decodedEvent);
+
+            return;
+        }
 
         $this->availableEvents->add($applicationId, $decodedEvent);
     }
