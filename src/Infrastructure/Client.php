@@ -38,6 +38,14 @@ final readonly class Client
 
     public function connect(): self
     {
+        if (null !== $this->connection) {
+            echo 'already connected!' . PHP_EOL;
+
+            return $this;
+        }
+
+        echo 'connecting!' . PHP_EOL;
+
         // @todo this only needs to connect to the IPC server
         return new self(
             $this->config,
@@ -49,6 +57,10 @@ final readonly class Client
 
     public function runIPCServer(): void
     {
+        if (file_exists('./eventsourcerer-shared-socket.sock')) {
+            unlink('./eventsourcerer-shared-socket.sock');
+        }
+
         $loop = Loop::get();
 
         $externalConnection = null;
@@ -91,9 +103,10 @@ final readonly class Client
 
         $server->on('connection', function (ConnectionInterface $worker) use ($applicationId, &$workers, &$externalConnection) {
             echo 'Worker connected' . PHP_EOL;
-var_dump($worker); die;
-            $this->availableEvents->declareWorker($workerId, $applicationId);
 
+            $workerId = WorkerId::fromString($worker->getLocalAddress());
+
+            $this->availableEvents->declareWorker($workerId, $applicationId);
 
             $workers[] = $worker;
 
