@@ -33,17 +33,24 @@ final readonly class Client
         private ?ConnectionInterface $connection = null
     ) {}
 
-    public function connect(): self
+    public function connect(WorkerId $workerId): self
     {
         if (null !== $this->connection) {
             return $this;
         }
 
+        $workerConnection = await((new Connector())->connect('unix://eventsourcerer-shared-socket.sock'));
+
+        $this->availableEvents->declareWorker(
+            $workerId,
+            ApplicationId::fromString($this->config->eventSourcererApplicationId)
+        );
+
         return new self(
             $this->config,
             $this->availableEvents,
             $this->sharedProcessCommunication,
-            await((new Connector())->connect('unix://eventsourcerer-shared-socket.sock'))
+            $workerConnection
         );
     }
 
@@ -99,12 +106,6 @@ final readonly class Client
         $workers = [];
 
         $server->on('connection', function (ConnectionInterface $worker) use ($applicationId, &$workers, &$externalConnection) {
-            echo 'Worker connected' . PHP_EOL;
-
-            $workerId = WorkerId::fromString($worker->getLocalAddress());
-
-            $this->availableEvents->declareWorker($workerId, $applicationId);
-
             $workers[] = $worker;
 
             // Forward data from external connection to all workers
