@@ -19,7 +19,6 @@ use React\EventLoop\Loop;
 use React\Socket\ConnectionInterface;
 use React\Socket\Connector;
 use React\Socket\SocketServer;
-use React\Socket\UnixConnector;
 
 final readonly class Client
 {
@@ -226,7 +225,7 @@ final readonly class Client
         Checkpoint $streamCheckpoint,
         Checkpoint $allStreamCheckpoint
     ): void {
-        (new UnixConnector(Loop::get()))->connect(self::IPC_URI)->then(
+        (new Connector(Loop::get()))->connect(self::IPC_URI)->then(
             function (ConnectionInterface $connection) use ($stream, $streamCheckpoint, $allStreamCheckpoint) {
                 $connection->write(
                     CreateMessage::forAcknowledgement(
