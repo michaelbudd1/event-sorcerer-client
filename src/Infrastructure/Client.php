@@ -22,8 +22,7 @@ use React\Socket\SocketServer;
 
 final readonly class Client
 {
-//    private const string IPC_URI = 'unix:///tmp/eventsourcerer-shared-socket.sock';
-    private const string IPC_URI = '127.0.0.1:1985';
+    private const string IPC_URI = 'unix:///tmp/eventsourcerer-shared-socket.sock';
 
     public function __construct(
         private Config $config,
@@ -129,13 +128,6 @@ final readonly class Client
         $server->on('connection', function (ConnectionInterface $worker) use ($applicationId, &$workers, &$externalConnection) {
             $workers[] = $worker;
 
-            // Forward data from external connection to all workers
-//            $externalConnection?->on('data', function (string $events) use ($applicationId) {
-//                foreach ($workers as $w) {
-//                    $w->write($data);
-//                }
-//            });
-
             $worker->on('data', function ($data) use ($externalConnection) {
                 $externalConnection?->write($data);
                 $externalConnection?->end();
@@ -144,6 +136,8 @@ final readonly class Client
             $worker->on('close', function () use (&$workers, $worker) {
                 $workers = array_filter($workers, static fn ($w) => $w !== $worker);
             });
+
+            echo 'Worker connected' . PHP_EOL;
         });
 
         echo 'Main process running' . PHP_EOL;
