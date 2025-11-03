@@ -16,6 +16,7 @@ use PearTreeWebLtd\EventSourcererMessageUtilities\Model\MessageType;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Model\StreamId;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Service\CreateMessage;
 use React\EventLoop\Loop;
+use React\Socket\Connection;
 use React\Socket\ConnectionInterface;
 use React\Socket\Connector;
 use React\Socket\SocketServer;
@@ -38,7 +39,22 @@ final readonly class Client
             return $this;
         }
 
-        $workerConnection = await((new Connector(loop: Loop::get()))->connect(self::IPC_URI));
+        // Use synchronous socket connection for worker processes
+        $socket = @stream_socket_client(
+            self::IPC_URI,
+            $errno,
+            $errstr,
+            30
+        );
+
+        if (false === $socket) {
+            throw new \RuntimeException(
+                sprintf('Failed to connect to IPC socket: %s (%d)', $errstr, $errno)
+            );
+        }
+
+        // Wrap in ReactPHP connection interface for compatibility
+        $workerConnection = new Connection($socket, Loop::get());
 
         $this->availableEvents->declareWorker(
             $workerId,
