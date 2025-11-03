@@ -227,7 +227,7 @@ final readonly class Client
         Checkpoint $streamCheckpoint,
         Checkpoint $allStreamCheckpoint
     ): void {
-        (new UnixConnector())->connect(self::IPC_URI)->then(
+        (new UnixConnector(Loop::get()))->connect(self::IPC_URI)->then(
             function (ConnectionInterface $connection) use ($stream, $streamCheckpoint, $allStreamCheckpoint) {
                 $connection->write(
                     CreateMessage::forAcknowledgement(
