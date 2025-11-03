@@ -20,6 +20,7 @@ use React\Socket\Connection;
 use React\Socket\ConnectionInterface;
 use React\Socket\Connector;
 use React\Socket\SocketServer;
+use React\Socket\UnixConnector;
 use function React\Async\await;
 
 final readonly class Client
@@ -33,41 +34,48 @@ final readonly class Client
         private ?ConnectionInterface $connection = null
     ) {}
 
-    public function connect(WorkerId $workerId): self
-    {
-        if (null !== $this->connection) {
-            return $this;
-        }
-
-        // Use synchronous socket connection for worker processes
-        $socket = stream_socket_client(
-            self::IPC_URI,
-            $errno,
-            $errstr,
-            30
-        );
-
-        if (false === $socket) {
-            throw new \RuntimeException(
-                sprintf('Failed to connect to IPC socket: %s (%d)', $errstr, $errno)
-            );
-        }
-
-        // Wrap in ReactPHP connection interface for compatibility
-        $workerConnection = new Connection($socket, Loop::get());
-
-        $this->availableEvents->declareWorker(
-            $workerId,
-            ApplicationId::fromString($this->config->eventSourcererApplicationId)
-        );
-
-        return new self(
-            $this->config,
-            $this->availableEvents,
-            $this->sharedProcessCommunication,
-            $workerConnection
-        );
-    }
+//    public function connect(WorkerId $workerId): self
+//    {
+//        if (null !== $this->connection) {
+//            return $this;
+//        }
+//
+//        // Use synchronous socket connection for worker processes
+//        $socket = stream_socket_client(
+//            self::IPC_URI,
+//            $errno,
+//            $errstr,
+//            30
+//        );
+//
+//        if (false === $socket) {
+//            throw new \RuntimeException(
+//                sprintf('Failed to connect to IPC socket: %s (%d)', $errstr, $errno)
+//            );
+//        }
+//
+//        // Wrap in ReactPHP connection interface for compatibility
+//        $workerConnection = new Connection($socket, Loop::get());
+//
+//        $connector = new React\Socket\UnixConnector();
+//
+//        $connector->connect('/tmp/demo.sock')->then(function (React\Socket\ConnectionInterface $connection) {
+//            $connection->write("HELLO\n");
+//        });
+//
+//
+//        $this->availableEvents->declareWorker(
+//            $workerId,
+//            ApplicationId::fromString($this->config->eventSourcererApplicationId)
+//        );
+//
+//        return new self(
+//            $this->config,
+//            $this->availableEvents,
+//            $this->sharedProcessCommunication,
+//            $workerConnection
+//        );
+//    }
 
     public function connected(): bool
     {
@@ -211,17 +219,21 @@ final readonly class Client
         Checkpoint $streamCheckpoint,
         Checkpoint $allStreamCheckpoint
     ): void {
-        $this->connection?->write(
-            CreateMessage::forAcknowledgement(
-                $stream,
-                ApplicationId::fromString($this->config->eventSourcererApplicationId),
-                $streamCheckpoint,
-                $allStreamCheckpoint
-            )
-        );
+        (new UnixConnector())->connect(self::IPC_URI)->then(
+            function (ConnectionInterface $connection) use ($stream, $streamCheckpoint, $allStreamCheckpoint) {
+                $connection->write(
+                    CreateMessage::forAcknowledgement(
+                        $stream,
+                        ApplicationId::fromString($this->config->eventSourcererApplicationId),
+                        $streamCheckpoint,
+                        $allStreamCheckpoint
+                    )
+                );
 
-        $this->connection?->end();
-        $this->connection->close();
+                $connection->end();
+                $connection->close();
+            }
+        );
     }
 
     public function writeNewEvent(
