@@ -38,7 +38,7 @@ final readonly class Client
             return $this;
         }
 
-        $workerConnection = await((new Connector())->connect(self::IPC_URI));
+        $workerConnection = await((new Connector(loop: Loop::get()))->connect(self::IPC_URI));
 
         $this->availableEvents->declareWorker(
             $workerId,
