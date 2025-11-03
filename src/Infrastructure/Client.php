@@ -173,6 +173,14 @@ final readonly class Client
         );
     }
 
+    public function attachWorker(WorkerId $workerId): void
+    {
+        $this->availableEvents->declareWorker(
+            $workerId,
+            ApplicationId::fromString($this->config->eventSourcererApplicationId)
+        );
+    }
+
     public function detachWorker(WorkerId $workerId): void
     {
         $this->availableEvents->detachWorker($workerId);
