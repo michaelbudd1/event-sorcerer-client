@@ -224,6 +224,8 @@ final readonly class Client
     ): void {
         (new Connector(loop: Loop::get()))->connect(self::IPC_URI)->then(
             function (ConnectionInterface $connection) use ($stream, $streamCheckpoint, $allStreamCheckpoint) {
+                echo 'Yes I\'m writing an acknowledgement!' . PHP_EOL;
+
                 $connection->write(
                     CreateMessage::forAcknowledgement(
                         $stream,
