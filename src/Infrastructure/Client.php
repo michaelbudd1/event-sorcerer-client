@@ -23,9 +23,8 @@ use function React\Async\await;
 
 final readonly class Client
 {
-    /**
-     * @param ConnectionInterface|null $connection
-     */
+    private const string IPC_URI = 'unix://eventsourcerer-shared-socket.sock';
+
     public function __construct(
         private Config $config,
         private AvailableEvents $availableEvents,
@@ -39,7 +38,7 @@ final readonly class Client
             return $this;
         }
 
-        $workerConnection = await((new Connector())->connect('unix://eventsourcerer-shared-socket.sock'));
+        $workerConnection = await((new Connector())->connect(self::IPC_URI));
 
         $this->availableEvents->declareWorker(
             $workerId,
@@ -102,7 +101,7 @@ final readonly class Client
             });
 
         // Create IPC server for workers
-        $server = new SocketServer('unix://eventsourcerer-shared-socket.sock');
+        $server = new SocketServer(self::IPC_URI);
         $workers = [];
 
         $server->on('connection', function (ConnectionInterface $worker) use ($applicationId, &$workers, &$externalConnection) {
@@ -117,6 +116,7 @@ final readonly class Client
 
             $worker->on('data', function ($data) use ($externalConnection) {
                 $externalConnection?->write($data);
+                $externalConnection?->end();
             });
 
             $worker->on('close', function () use (&$workers, $worker) {
@@ -143,21 +143,10 @@ final readonly class Client
 
     public function fetchOneMessage(WorkerId $workerId): ?array
     {
-        $applicationId = ApplicationId::fromString($this->config->eventSourcererApplicationId);
-
-        return $this->availableEvents->fetchOne($workerId, $applicationId);
-//
-//        if (null === $message) {
-//            return null;
-//        }
-//
-//        if ($this->sharedProcessCommunication->messageIsAlreadyBeingProcessed($message['allSequence'])) {
-//            return $this->fetchOneMessage($workerId);
-//        }
-
-//        $this->sharedProcessCommunication->addEventCurrentlyBeingProcessed($message['allSequence']);
-
-//        return $message;
+        return $this->availableEvents->fetchOne(
+            $workerId,
+            ApplicationId::fromString($this->config->eventSourcererApplicationId)
+        );
     }
 
     public function detachWorker(WorkerId $workerId): void
@@ -215,9 +204,8 @@ final readonly class Client
             )
         );
 
+        $this->connection?->end();
         $this->connection->close();
-
-//        $this->sharedProcessCommunication->removeEventCurrentlyBeingProcessed($allStreamCheckpoint->value);
     }
 
     public function writeNewEvent(
@@ -229,7 +217,7 @@ final readonly class Client
         $this
             ->connection
             ->then(function (ConnectionInterface $connection) use ($streamId, $eventName, $eventVersion, $payload) {
-                $connection->end(
+                $connection->write(
                     CreateMessage::forWriteNewEvent(
                         $streamId,
                         $eventName,
@@ -237,6 +225,8 @@ final readonly class Client
                         $payload
                     )
                 );
+
+                $connection->end();
             });
     }
 
