@@ -23,7 +23,7 @@ use function React\Async\await;
 
 final readonly class Client
 {
-    private const string IPC_URI = 'unix://eventsourcerer-shared-socket.sock';
+    private const string IPC_URI = 'unix:///tmp/eventsourcerer-shared-socket.sock';
 
     public function __construct(
         private Config $config,
@@ -60,8 +60,8 @@ final readonly class Client
 
     public function runIPCServer(): void
     {
-        if (file_exists('./eventsourcerer-shared-socket.sock')) {
-            unlink('./eventsourcerer-shared-socket.sock');
+        if (file_exists('/tmp/eventsourcerer-shared-socket.sock')) {
+            unlink('/tmp/eventsourcerer-shared-socket.sock');
         }
 
         $loop = Loop::get();
