@@ -117,7 +117,7 @@ final readonly class Client
             });
 
         // Create IPC server for workers
-        $server = new SocketServer(self::IPC_URI);
+        $server = new SocketServer(self::IPC_URI, [], $loop);
         $workers = [];
 
         $server->on('connection', function (ConnectionInterface $worker) use ($applicationId, &$workers, &$externalConnection) {
