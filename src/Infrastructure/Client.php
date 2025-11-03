@@ -40,7 +40,7 @@ final readonly class Client
         }
 
         // Use synchronous socket connection for worker processes
-        $socket = @stream_socket_client(
+        $socket = stream_socket_client(
             self::IPC_URI,
             $errno,
             $errstr,
@@ -117,7 +117,7 @@ final readonly class Client
             });
 
         // Create IPC server for workers
-        $server = new SocketServer(self::IPC_URI, [], $loop);
+        $server = new SocketServer(self::IPC_URI);
         $workers = [];
 
         $server->on('connection', function (ConnectionInterface $worker) use ($applicationId, &$workers, &$externalConnection) {
