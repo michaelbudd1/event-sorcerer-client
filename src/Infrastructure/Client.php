@@ -16,16 +16,15 @@ use PearTreeWebLtd\EventSourcererMessageUtilities\Model\MessageType;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Model\StreamId;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Service\CreateMessage;
 use React\EventLoop\Loop;
-use React\Socket\Connection;
 use React\Socket\ConnectionInterface;
 use React\Socket\Connector;
 use React\Socket\SocketServer;
 use React\Socket\UnixConnector;
-use function React\Async\await;
 
 final readonly class Client
 {
-    private const string IPC_URI = 'unix:///tmp/eventsourcerer-shared-socket.sock';
+//    private const string IPC_URI = 'unix:///tmp/eventsourcerer-shared-socket.sock';
+    private const string IPC_URI = '127.0.0.1:1985';
 
     public function __construct(
         private Config $config,
