@@ -222,51 +222,27 @@ final readonly class Client
         Checkpoint $streamCheckpoint,
         Checkpoint $allStreamCheckpoint
     ): void {
-//        $loop = Loop::get();
-//
-//        (new Connector(loop: $loop))->connect(self::IPC_URI)->then(
-//            function (ConnectionInterface $connection) use ($stream, $streamCheckpoint, $allStreamCheckpoint) {
-//                echo 'Yes I\'m writing an acknowledgement!' . PHP_EOL;
-//
-//                $connection->write(
-//                    CreateMessage::forAcknowledgement(
-//                        $stream,
-//                        ApplicationId::fromString($this->config->eventSourcererApplicationId),
-//                        $streamCheckpoint,
-//                        $allStreamCheckpoint
-//                    )
-//                );
-//
-//                $connection->end();
+        $loop = Loop::get();
+
+        (new Connector(loop: $loop))->connect(self::IPC_URI)->then(
+            function (ConnectionInterface $connection) use ($stream, $streamCheckpoint, $allStreamCheckpoint) {
+                echo 'Yes I\'m writing an acknowledgement!' . PHP_EOL;
+
+                $connection->write(
+                    CreateMessage::forAcknowledgement(
+                        $stream,
+                        ApplicationId::fromString($this->config->eventSourcererApplicationId),
+                        $streamCheckpoint,
+                        $allStreamCheckpoint
+                    )
+                );
+
+                $connection->end();
 //                $connection->close();
-//            }
-//        );
-//
-//        $loop?->run();
-
-        $socket = @stream_socket_client(
-            self::IPC_URI,
-            $errno,
-            $errstr,
-            5
+            }
         );
 
-        if (false === $socket) {
-            throw new \RuntimeException(
-                sprintf('Failed to connect to IPC socket: %s (%d)', $errstr, $errno)
-            );
-        }
-
-        fwrite($socket,
-            CreateMessage::forAcknowledgement(
-                $stream,
-                ApplicationId::fromString($this->config->eventSourcererApplicationId),
-                $streamCheckpoint,
-                $allStreamCheckpoint
-            )->toString()
-        );
-
-        fclose($socket);
+        $loop?->run();
     }
 
     public function writeNewEvent(
