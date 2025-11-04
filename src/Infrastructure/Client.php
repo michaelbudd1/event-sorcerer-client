@@ -222,8 +222,10 @@ final readonly class Client
         Checkpoint $streamCheckpoint,
         Checkpoint $allStreamCheckpoint
     ): void {
-        (new Connector(loop: Loop::get()))->connect(self::IPC_URI)->then(
-            function (ConnectionInterface $connection) use ($stream, $streamCheckpoint, $allStreamCheckpoint) {
+        $loop = Loop::get();
+
+        (new Connector(loop: $loop))->connect(self::IPC_URI)->then(
+            function (ConnectionInterface $connection) use ($loop, $stream, $streamCheckpoint, $allStreamCheckpoint) {
                 echo 'Yes I\'m writing an acknowledgement!' . PHP_EOL;
 
                 $connection->write(
@@ -235,8 +237,12 @@ final readonly class Client
                     )
                 );
 
+                $loop->addTimer(0.5, function() use ($connection) {
+                    $connection->end();
+                });
+
                 $connection->end();
-//                $connection->close();
+                $connection->close();
             }
         );
     }
