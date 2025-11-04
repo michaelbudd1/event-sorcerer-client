@@ -240,9 +240,6 @@ final readonly class Client
                 $loop->addTimer(0.5, function() use ($connection) {
                     $connection->end();
                 });
-
-                $connection->end();
-                $connection->close();
             }
         );
     }
