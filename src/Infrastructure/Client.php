@@ -15,7 +15,6 @@ use PearTreeWebLtd\EventSourcererMessageUtilities\Model\MessageMarkup;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Model\MessageType;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Model\StreamId;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Service\CreateMessage;
-use React\EventLoop\Loop;
 use React\Socket\ConnectionInterface;
 use React\Socket\Connector;
 use React\Socket\SocketServer;
@@ -233,11 +232,9 @@ final readonly class Client
 
                 $connection->end();
 
-                echo $success ? 'Yes written' : 'Did not write';
+                echo $success ? 'Yes written' : 'Did not write' . PHP_EOL;
 
-//                $loop->addTimer(0.5, function() use ($connection) {
-//                    $connection->end();
-//                });
+                $connection->close();
             }
         );
     }
