@@ -222,7 +222,7 @@ final readonly class Client
             function (ConnectionInterface $connection) use ($stream, $streamCheckpoint, $allStreamCheckpoint) {
                 echo 'Yes I\'m writing an acknowledgement!' . PHP_EOL;
 
-                $connection->write(
+                $success = $connection->write(
                     CreateMessage::forAcknowledgement(
                         $stream,
                         ApplicationId::fromString($this->config->eventSourcererApplicationId),
@@ -232,6 +232,8 @@ final readonly class Client
                 );
 
                 $connection->end();
+
+                echo $success ? 'Yes written' : 'Did not write';
 
 //                $loop->addTimer(0.5, function() use ($connection) {
 //                    $connection->end();
