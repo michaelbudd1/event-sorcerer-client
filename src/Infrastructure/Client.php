@@ -85,13 +85,11 @@ final readonly class Client
             unlink('/tmp/eventsourcerer-shared-socket.sock');
         }
 
-        $loop = Loop::get();
-
         $externalConnection = null;
 
         $applicationId = ApplicationId::fromString($this->config->eventSourcererApplicationId);
 
-        (new Connector(loop: $loop))
+        (new Connector())
             ->connect(
                 sprintf(
                     '%s:%d',
@@ -122,7 +120,7 @@ final readonly class Client
             });
 
         // Create IPC server for workers
-        $server = new SocketServer(self::IPC_URI, [], $loop);
+        $server = new SocketServer(self::IPC_URI);
         $workers = [];
 
         $server->on('connection', function (ConnectionInterface $worker) use ($applicationId, &$workers, &$externalConnection) {
@@ -144,8 +142,6 @@ final readonly class Client
         });
 
         echo 'Main process running' . PHP_EOL;
-
-        $loop?->run();
     }
 
     public function availableEventsCount(): int
@@ -222,10 +218,8 @@ final readonly class Client
         Checkpoint $streamCheckpoint,
         Checkpoint $allStreamCheckpoint
     ): void {
-        $loop = Loop::get();
-
-        (new Connector(loop: $loop))->connect(self::IPC_URI)->then(
-            function (ConnectionInterface $connection) use ($loop, $stream, $streamCheckpoint, $allStreamCheckpoint) {
+        (new Connector())->connect(self::IPC_URI)->then(
+            function (ConnectionInterface $connection) use ($stream, $streamCheckpoint, $allStreamCheckpoint) {
                 echo 'Yes I\'m writing an acknowledgement!' . PHP_EOL;
 
                 $connection->write(
@@ -237,9 +231,11 @@ final readonly class Client
                     )
                 );
 
-                $loop->addTimer(0.5, function() use ($connection) {
-                    $connection->end();
-                });
+                $connection->end();
+
+//                $loop->addTimer(0.5, function() use ($connection) {
+//                    $connection->end();
+//                });
             }
         );
     }
