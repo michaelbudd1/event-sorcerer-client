@@ -17,7 +17,9 @@ use PearTreeWebLtd\EventSourcererMessageUtilities\Model\StreamId;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Service\CreateMessage;
 use React\Socket\ConnectionInterface;
 use React\Socket\Connector;
+use React\Socket\FixedUriConnector;
 use React\Socket\SocketServer;
+use React\Socket\UnixConnector;
 
 final readonly class Client
 {
@@ -217,8 +219,9 @@ final readonly class Client
         Checkpoint $streamCheckpoint,
         Checkpoint $allStreamCheckpoint
     ): void {
-        (new Connector())->connect(self::IPC_URI)->then(
-            function (ConnectionInterface $connection) use ($stream, $streamCheckpoint, $allStreamCheckpoint) {
+        $connector = (new FixedUriConnector(self::IPC_URI, new UnixConnector()))
+            ->connect('')
+            ->then(function (ConnectionInterface $connection) use ($stream, $streamCheckpoint, $allStreamCheckpoint) {
                 echo 'Yes I\'m writing an acknowledgement!' . PHP_EOL;
 
                 $success = $connection->write(
