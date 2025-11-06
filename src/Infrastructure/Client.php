@@ -101,17 +101,17 @@ final readonly class Client
                 $externalConnection = $connection;
 
                 $connection->write(CreateMessage::forProvidingIdentity($applicationId, $this->config->applicationType));
-//
-//                if (!$this->sharedProcessCommunication->catchupInProgress()) {
-//                    $this->sharedProcessCommunication->flagCatchupIsInProgress();
-//
-//                    $connection->write(
-//                        CreateMessage::forCatchupRequest(
-//                            StreamId::fromString('*'),
-//                            $applicationId
-//                        )
-//                    );
-//                }
+
+                if (!$this->sharedProcessCommunication->catchupInProgress()) {
+                    $this->sharedProcessCommunication->flagCatchupIsInProgress();
+
+                    $connection->write(
+                        CreateMessage::forCatchupRequest(
+                            StreamId::fromString('*'),
+                            $applicationId
+                        )
+                    );
+                }
 
                 echo 'Connected to external service' . PHP_EOL;
 
