@@ -230,7 +230,7 @@ final readonly class Client
                         ApplicationId::fromString($this->config->eventSourcererApplicationId),
                         $streamCheckpoint,
                         $allStreamCheckpoint
-                    )
+                    )->toString()
                 );
 
                 $connection->end();
