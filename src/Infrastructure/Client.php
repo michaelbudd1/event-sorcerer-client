@@ -219,12 +219,12 @@ final readonly class Client
         Checkpoint $streamCheckpoint,
         Checkpoint $allStreamCheckpoint
     ): void {
-        $connector = (new FixedUriConnector(self::IPC_URI, new UnixConnector()))
+        (new FixedUriConnector(self::IPC_URI, new UnixConnector()))
             ->connect('')
             ->then(function (ConnectionInterface $connection) use ($stream, $streamCheckpoint, $allStreamCheckpoint) {
                 echo 'Yes I\'m writing an acknowledgement!' . PHP_EOL;
 
-                $success = $connection->write(
+                $connection->write(
                     CreateMessage::forAcknowledgement(
                         $stream,
                         ApplicationId::fromString($this->config->eventSourcererApplicationId),
@@ -234,9 +234,6 @@ final readonly class Client
                 );
 
                 $connection->end();
-
-                echo $success ? 'Yes written' : 'Did not write' . PHP_EOL;
-
                 $connection->close();
             }
         );
