@@ -136,10 +136,10 @@ final readonly class Client
 
                     echo 'Worker connected' . PHP_EOL;
                 });
-//
-//                $connection->on('data', function (string $events) use ($applicationId) {
-//                    $this->addEventsForProcessing($applicationId, $events);
-//                });
+
+                $connection->on('data', function (string $events) use ($applicationId) {
+                    $this->addEventsForProcessing($applicationId, $events);
+                });
             });
 
         echo 'Main process running' . PHP_EOL;
