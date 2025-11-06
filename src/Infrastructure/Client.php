@@ -18,7 +18,6 @@ use PearTreeWebLtd\EventSourcererMessageUtilities\Service\CreateMessage;
 use React\Socket\ConnectionInterface;
 use React\Socket\Connector;
 use React\Socket\FixedUriConnector;
-use React\Socket\SocketServer;
 use React\Socket\UnixConnector;
 use React\Socket\UnixServer;
 
@@ -101,18 +100,18 @@ final readonly class Client
             )->then(function (ConnectionInterface $connection) use ($applicationId, &$externalConnection) {
                 $externalConnection = $connection;
 
-                $connection->write(CreateMessage::forProvidingIdentity($applicationId, $this->config->applicationType));
-
-                if (!$this->sharedProcessCommunication->catchupInProgress()) {
-                    $this->sharedProcessCommunication->flagCatchupIsInProgress();
-
-                    $connection->write(
-                        CreateMessage::forCatchupRequest(
-                            StreamId::fromString('*'),
-                            $applicationId
-                        )
-                    );
-                }
+//                $connection->write(CreateMessage::forProvidingIdentity($applicationId, $this->config->applicationType));
+//
+//                if (!$this->sharedProcessCommunication->catchupInProgress()) {
+//                    $this->sharedProcessCommunication->flagCatchupIsInProgress();
+//
+//                    $connection->write(
+//                        CreateMessage::forCatchupRequest(
+//                            StreamId::fromString('*'),
+//                            $applicationId
+//                        )
+//                    );
+//                }
 
                 echo 'Connected to external service' . PHP_EOL;
 
@@ -137,10 +136,10 @@ final readonly class Client
 
                     echo 'Worker connected' . PHP_EOL;
                 });
-
-                $connection->on('data', function (string $events) use ($applicationId) {
-                    $this->addEventsForProcessing($applicationId, $events);
-                });
+//
+//                $connection->on('data', function (string $events) use ($applicationId) {
+//                    $this->addEventsForProcessing($applicationId, $events);
+//                });
             });
 
         echo 'Main process running' . PHP_EOL;
