@@ -234,7 +234,7 @@ final readonly class Client
                 );
 
                 $connection->end();
-                $connection->close();
+//                $connection->close();
             }
         );
     }
