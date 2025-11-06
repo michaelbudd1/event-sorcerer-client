@@ -125,7 +125,7 @@ final readonly class Client
         $server->on('connection', function (ConnectionInterface $worker) use ($applicationId, &$workers, &$externalConnection) {
             $workers[] = $worker;
 
-            $worker->on('data', function ($data) use ($externalConnection) {
+            $worker->on('data', function ($data) use (&$externalConnection) {
                 echo 'YES we received a message!' . PHP_EOL;
                 echo 'And are we connected? ... ' . ($externalConnection !== null ? 'YES' : 'NO');
 
