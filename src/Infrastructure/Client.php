@@ -220,7 +220,7 @@ final readonly class Client
         Checkpoint $streamCheckpoint,
         Checkpoint $allStreamCheckpoint
     ): void {
-        (new FixedUriConnector('unix://' . self::IPC_URI . 'asdasdas', new UnixConnector()))
+        (new FixedUriConnector('unix://' . self::IPC_URI, new UnixConnector()))
             ->connect('')
             ->then(function (ConnectionInterface $connection) use ($stream, $streamCheckpoint, $allStreamCheckpoint) {
                 echo 'Yes I\'m writing an acknowledgement!' . PHP_EOL;
