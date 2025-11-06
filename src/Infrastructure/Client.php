@@ -114,10 +114,6 @@ final readonly class Client
                     );
                 }
 
-                $connection->on('data', function (string $events) use ($applicationId) {
-                    $this->addEventsForProcessing($applicationId, $events);
-                });
-
                 echo 'Connected to external service' . PHP_EOL;
 
                 // Create IPC server for workers
@@ -140,6 +136,10 @@ final readonly class Client
                     });
 
                     echo 'Worker connected' . PHP_EOL;
+                });
+
+                $connection->on('data', function (string $events) use ($applicationId) {
+                    $this->addEventsForProcessing($applicationId, $events);
                 });
             });
 
