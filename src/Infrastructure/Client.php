@@ -118,29 +118,29 @@ final readonly class Client
                 });
 
                 echo 'Connected to external service' . PHP_EOL;
+
+                // Create IPC server for workers
+                $server = new SocketServer(self::IPC_URI);
+                $workers = [];
+
+                $server->on('connection', function (ConnectionInterface $worker) use ($applicationId, &$workers, &$externalConnection) {
+                    $workers[] = $worker;
+
+                    $worker->on('data', function ($data) use (&$externalConnection) {
+                        echo 'YES we received a message!' . PHP_EOL;
+                        echo 'And are we connected? ... ' . ($externalConnection !== null ? 'YES' : 'NO');
+
+                        $externalConnection?->write($data);
+                        $externalConnection?->end();
+                    });
+
+                    $worker->on('close', function () use (&$workers, $worker) {
+                        $workers = array_filter($workers, static fn ($w) => $w !== $worker);
+                    });
+
+                    echo 'Worker connected' . PHP_EOL;
+                });
             });
-
-        // Create IPC server for workers
-        $server = new SocketServer(self::IPC_URI);
-        $workers = [];
-
-        $server->on('connection', function (ConnectionInterface $worker) use ($applicationId, &$workers, &$externalConnection) {
-            $workers[] = $worker;
-
-            $worker->on('data', function ($data) use (&$externalConnection) {
-                echo 'YES we received a message!' . PHP_EOL;
-                echo 'And are we connected? ... ' . ($externalConnection !== null ? 'YES' : 'NO');
-
-                $externalConnection?->write($data);
-                $externalConnection?->end();
-            });
-
-            $worker->on('close', function () use (&$workers, $worker) {
-                $workers = array_filter($workers, static fn ($w) => $w !== $worker);
-            });
-
-            echo 'Worker connected' . PHP_EOL;
-        });
 
         echo 'Main process running' . PHP_EOL;
     }
@@ -234,7 +234,7 @@ final readonly class Client
                 );
 
                 $connection->end();
-//                $connection->close();
+                $connection->close();
             }
         );
     }
