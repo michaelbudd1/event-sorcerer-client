@@ -114,6 +114,8 @@ final readonly class Client
                 }
 
                 $connection->on('data', function (string $events) use ($applicationId) {
+                    var_dump($events);
+
                     echo 'yes calling this everytime!' . PHP_EOL;
 
                     $this->addEventsForProcessing($applicationId, $events);
