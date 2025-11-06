@@ -100,7 +100,7 @@ final readonly class Client
             )->then(function (ConnectionInterface $connection) use ($applicationId, &$externalConnection) {
                 $externalConnection = $connection;
 
-//                $connection->write(CreateMessage::forProvidingIdentity($applicationId, $this->config->applicationType));
+                $connection->write(CreateMessage::forProvidingIdentity($applicationId, $this->config->applicationType));
 //
 //                if (!$this->sharedProcessCommunication->catchupInProgress()) {
 //                    $this->sharedProcessCommunication->flagCatchupIsInProgress();
