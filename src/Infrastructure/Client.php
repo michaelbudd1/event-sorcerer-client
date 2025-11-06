@@ -20,10 +20,11 @@ use React\Socket\Connector;
 use React\Socket\FixedUriConnector;
 use React\Socket\SocketServer;
 use React\Socket\UnixConnector;
+use React\Socket\UnixServer;
 
 final readonly class Client
 {
-    private const string IPC_URI = 'unix:///tmp/eventsourcerer-shared-socket.sock';
+    private const string IPC_URI = '/tmp/eventsourcerer-shared-socket.sock';
 
     public function __construct(
         private Config $config,
@@ -82,11 +83,11 @@ final readonly class Client
 
     public function runIPCServer(): void
     {
-        if (file_exists('/tmp/eventsourcerer-shared-socket.sock')) {
-            unlink('/tmp/eventsourcerer-shared-socket.sock');
+        if (file_exists(self::IPC_URI)) {
+            unlink(self::IPC_URI);
         }
 
-        $externalConnection = null;
+//        $externalConnection = null;
 
         $applicationId = ApplicationId::fromString($this->config->eventSourcererApplicationId);
 
@@ -120,7 +121,7 @@ final readonly class Client
                 echo 'Connected to external service' . PHP_EOL;
 
                 // Create IPC server for workers
-                $server = new SocketServer(self::IPC_URI);
+                $server = new UnixServer(self::IPC_URI);
                 $workers = [];
 
                 $server->on('connection', function (ConnectionInterface $worker) use ($applicationId, &$workers, &$externalConnection) {
