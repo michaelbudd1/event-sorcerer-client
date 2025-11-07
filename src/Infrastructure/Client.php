@@ -117,14 +117,13 @@ final readonly class Client
                 $server = new UnixServer(self::IPC_URI);
                 $workers = [];
 
-                $server->on('connection', function (ConnectionInterface $worker) use ($applicationId, &$workers, &$externalConnection) {
+                $server->on('connection', function (ConnectionInterface $worker) use (&$workers, &$externalConnection) {
                     $workers[] = $worker;
 
                     $worker->on('data', function ($data) use (&$worker, &$externalConnection) {
                         echo 'YES we received a message!' . PHP_EOL;
 
                         $externalConnection->write($data);
-                        $externalConnection->end();
                         $worker->close();
                     });
 
