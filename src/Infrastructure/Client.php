@@ -135,6 +135,7 @@ final readonly class Client
                 });
 
                 $connection->on('data', function (string $events) use ($applicationId) {
+                    echo $events . PHP_EOL;
 //                    $this->addEventsForProcessing($applicationId, $events);
                 });
             });
