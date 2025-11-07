@@ -86,8 +86,6 @@ final readonly class Client
             unlink(self::IPC_URI);
         }
 
-//        $externalConnection = null;
-
         $applicationId = ApplicationId::fromString($this->config->eventSourcererApplicationId);
 
         (new Connector())
