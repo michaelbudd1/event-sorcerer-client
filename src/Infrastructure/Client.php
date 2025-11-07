@@ -135,7 +135,7 @@ final readonly class Client
                 });
 
                 $connection->on('data', function (string $events) use ($applicationId) {
-//                    $this->addEventsForProcessing($applicationId, $events);
+                    $this->addEventsForProcessing($applicationId, $events);
                 });
             });
 
