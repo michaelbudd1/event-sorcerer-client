@@ -120,11 +120,17 @@ final readonly class Client
                 $server = new UnixServer(self::IPC_URI, $loop);
 
                 $server->on('connection', function (ConnectionInterface $worker) use (&$externalConnection) {
-                    $worker->on('data', function ($data) use (&$externalConnection) {
+                    $worker->on('data', function ($data) use (&$worker, &$externalConnection) {
                         echo 'YES we received a message!' . PHP_EOL;
 
-//                        $externalConnection->write($data);
-//                        $externalConnection->end();
+                        $externalConnection->write($data);
+                        $externalConnection->end();
+
+                        /**
+                         * Worker connection must be closed here rather than in calling code, otherwise
+                         * the connection closes before the message has sent
+                         */
+                        $worker->close();
                     });
 
                     echo 'Worker connected' . PHP_EOL;
@@ -230,7 +236,6 @@ final readonly class Client
                 );
 
                 $connection->end();
-//                $connection->close();
             }
         );
     }
