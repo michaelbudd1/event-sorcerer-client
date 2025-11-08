@@ -124,7 +124,6 @@ final readonly class Client
                         echo 'Yes we received something ' . $data . PHP_EOL;
 
                         $externalConnection->write($data);
-                        $externalConnection->end();
 
                         /**
                          * Worker connection must be closed here rather than in calling code, otherwise
@@ -136,8 +135,12 @@ final readonly class Client
                     echo 'Worker connected' . PHP_EOL;
                 });
 
-                $connection->on('data', function (string $events) use ($applicationId) {
-                    $this->addEventsForProcessing($applicationId, $events);
+                $connection->on('data', function ($events) use ($applicationId) {
+                    try {
+                        $this->addEventsForProcessing($applicationId, $events);
+                    } catch (\Throwable $e) {
+                        echo 'Error occurred: ' . $e->getMessage() . PHP_EOL;
+                    }
                 });
 
                 echo 'Main process running' . PHP_EOL;
