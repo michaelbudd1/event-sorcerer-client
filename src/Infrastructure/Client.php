@@ -130,7 +130,7 @@ final readonly class Client
                          * Worker connection must be closed here rather than in calling code, otherwise
                          * the connection closes before the message has sent
                          */
-                        $worker->close();
+//                        $worker->close();
                     });
 
                     echo 'Worker connected' . PHP_EOL;
