@@ -121,6 +121,8 @@ final readonly class Client
 
                 $server->on('connection', function (ConnectionInterface $worker) use (&$externalConnection) {
                     $worker->on('data', function ($data) use (&$worker, &$externalConnection) {
+                        echo 'Yes we received something ' . $data . PHP_EOL;
+
                         $externalConnection->write($data);
 
                         /**
