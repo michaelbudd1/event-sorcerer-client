@@ -124,7 +124,7 @@ final readonly class Client
                         echo 'YES we received a message!' . PHP_EOL;
 
                         $externalConnection->write($data);
-                        $worker->close();
+//                        $worker->close();
                     });
 
                     $worker->on('close', function () use (&$workers, $worker) {
@@ -138,9 +138,9 @@ final readonly class Client
                     echo 'processing events' . PHP_EOL;
                     $this->addEventsForProcessing($applicationId, $events);
                 });
-            });
 
-        echo 'Main process running' . PHP_EOL;
+                echo 'Main process running' . PHP_EOL;
+            });
     }
 
     public function availableEventsCount(): int
@@ -220,8 +220,6 @@ final readonly class Client
         (new FixedUriConnector('unix://' . self::IPC_URI, new UnixConnector()))
             ->connect('')
             ->then(function (ConnectionInterface $connection) use ($stream, $streamCheckpoint, $allStreamCheckpoint) {
-                echo 'Yes I\'m writing an acknowledgement!' . PHP_EOL;
-
                 $connection->write(
                     CreateMessage::forAcknowledgement(
                         $stream,
