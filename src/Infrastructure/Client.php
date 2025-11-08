@@ -15,6 +15,7 @@ use PearTreeWebLtd\EventSourcererMessageUtilities\Model\MessageMarkup;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Model\MessageType;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Model\StreamId;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Service\CreateMessage;
+use React\EventLoop\Loop;
 use React\Socket\ConnectionInterface;
 use React\Socket\Connector;
 use React\Socket\FixedUriConnector;
@@ -88,14 +89,16 @@ final readonly class Client
 
         $applicationId = ApplicationId::fromString($this->config->eventSourcererApplicationId);
 
-        (new Connector())
+        $loop = Loop::get();
+
+        (new Connector(loop: $loop))
             ->connect(
                 sprintf(
                     '%s:%d',
                     $this->config->serverHost,
                     $this->config->serverPort
                 )
-            )->then(function (ConnectionInterface $connection) use ($applicationId, &$externalConnection) {
+            )->then(function (ConnectionInterface $connection) use ($applicationId, &$externalConnection, $loop) {
                 $externalConnection = $connection;
 
                 $connection->write(CreateMessage::forProvidingIdentity($applicationId, $this->config->applicationType));
@@ -114,7 +117,7 @@ final readonly class Client
                 echo 'Connected to external service' . PHP_EOL;
 
                 // Create IPC server for workers
-                $server = new UnixServer(self::IPC_URI);
+                $server = new UnixServer(self::IPC_URI, $loop);
                 $workers = [];
 
                 $server->on('connection', function (ConnectionInterface $worker) use (&$workers, &$externalConnection) {
