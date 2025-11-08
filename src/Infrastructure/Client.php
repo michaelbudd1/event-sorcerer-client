@@ -223,29 +223,21 @@ final readonly class Client
         Checkpoint $streamCheckpoint,
         Checkpoint $allStreamCheckpoint
     ): void {
-        $socket = @stream_socket_client(
-            'unix://' . self::IPC_URI,
-            $errno,
-            $errstr,
-            5
+        (new UnixConnector())
+            ->connect(self::IPC_URI)
+            ->then(function (ConnectionInterface $connection) use ($stream, $streamCheckpoint, $allStreamCheckpoint) {
+                $connection->write(
+                    CreateMessage::forAcknowledgement(
+                        $stream,
+                        ApplicationId::fromString($this->config->eventSourcererApplicationId),
+                        $streamCheckpoint,
+                        $allStreamCheckpoint
+                    )
+                );
+
+                $connection->end();
+            }
         );
-
-        if (false === $socket) {
-            throw new \RuntimeException(
-                sprintf('Failed to connect to IPC: %s (%d)', $errstr, $errno)
-            );
-        }
-
-        $message = CreateMessage::forAcknowledgement(
-            $stream,
-            ApplicationId::fromString($this->config->eventSourcererApplicationId),
-            $streamCheckpoint,
-            $allStreamCheckpoint
-        )->toString();
-
-        fwrite($socket, $message);
-
-        fclose($socket);
     }
 
     public function writeNewEvent(
