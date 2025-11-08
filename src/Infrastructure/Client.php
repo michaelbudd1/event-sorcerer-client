@@ -118,33 +118,25 @@ final readonly class Client
 
                 // Create IPC server for workers
                 $server = new UnixServer(self::IPC_URI, $loop);
-                $workers = [];
 
-                $server->on('connection', function (ConnectionInterface $worker) use (&$workers, &$externalConnection) {
-                    $workers[] = $worker;
-
+                $server->on('connection', function (ConnectionInterface $worker) use (&$externalConnection) {
                     $worker->on('data', function ($data) use (&$worker, &$externalConnection) {
                         echo 'YES we received a message!' . PHP_EOL;
 
-                        $externalConnection->write($data);
-                        $externalConnection->end();
-//                        $worker->close();
-                    });
-
-                    $worker->on('close', function () use (&$workers, $worker) {
-                        $workers = array_filter($workers, static fn ($w) => $w !== $worker);
+//                        $externalConnection->write($data);
+//                        $externalConnection->end();
                     });
 
                     echo 'Worker connected' . PHP_EOL;
                 });
 
                 $connection->on('data', function (string $events) use ($applicationId) {
-                    echo 'processing events' . PHP_EOL;
-                    try {
-                        $this->addEventsForProcessing($applicationId, $events);
-                    } catch (\Throwable $e) {
-                        echo 'is something silently failing here?? ' . $e->getMessage() . PHP_EOL;
-                    }
+//                    echo 'processing events' . PHP_EOL;
+//                    try {
+//                        $this->addEventsForProcessing($applicationId, $events);
+//                    } catch (\Throwable $e) {
+//                        echo 'is something silently failing here?? ' . $e->getMessage() . PHP_EOL;
+//                    }
                 });
 
                 echo 'Main process running' . PHP_EOL;
