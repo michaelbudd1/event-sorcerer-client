@@ -124,6 +124,7 @@ final readonly class Client
                         echo 'Yes we received something ' . $data . PHP_EOL;
 
                         $externalConnection->write($data);
+                        $externalConnection->end();
 
                         /**
                          * Worker connection must be closed here rather than in calling code, otherwise
