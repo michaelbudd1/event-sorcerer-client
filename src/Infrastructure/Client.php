@@ -223,7 +223,9 @@ final readonly class Client
         Checkpoint $streamCheckpoint,
         Checkpoint $allStreamCheckpoint
     ): void {
-        (new UnixConnector())
+        $loop = Loop::get();
+
+        (new UnixConnector($loop))
             ->connect(self::IPC_URI)
             ->then(function (ConnectionInterface $connection) use ($stream, $streamCheckpoint, $allStreamCheckpoint) {
                 $connection->write(
@@ -238,6 +240,8 @@ final readonly class Client
                 $connection->end();
             }
         );
+
+        $loop->run();
     }
 
     public function writeNewEvent(
