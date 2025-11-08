@@ -124,6 +124,7 @@ final readonly class Client
                         echo 'YES we received a message!' . PHP_EOL;
 
                         $externalConnection->write($data);
+                        $externalConnection->end();
 //                        $worker->close();
                     });
 
