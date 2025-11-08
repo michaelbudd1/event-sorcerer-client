@@ -120,7 +120,7 @@ final readonly class Client
                 $server = new UnixServer(self::IPC_URI, $loop);
 
                 $server->on('connection', function (ConnectionInterface $worker) use (&$externalConnection) {
-                    $worker->on('data', function ($data) use (&$worker, &$externalConnection) {
+                    $worker->on('data', function ($data) use (&$externalConnection) {
                         echo 'YES we received a message!' . PHP_EOL;
 
 //                        $externalConnection->write($data);
@@ -130,14 +130,14 @@ final readonly class Client
                     echo 'Worker connected' . PHP_EOL;
                 });
 
-                $connection->on('data', function (string $events) use ($applicationId) {
+//                $connection->on('data', function (string $events) use ($applicationId) {
 //                    echo 'processing events' . PHP_EOL;
 //                    try {
 //                        $this->addEventsForProcessing($applicationId, $events);
 //                    } catch (\Throwable $e) {
 //                        echo 'is something silently failing here?? ' . $e->getMessage() . PHP_EOL;
 //                    }
-                });
+//                });
 
                 echo 'Main process running' . PHP_EOL;
             });
