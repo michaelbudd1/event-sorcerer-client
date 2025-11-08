@@ -139,6 +139,8 @@ final readonly class Client
 
                 echo 'Main process running' . PHP_EOL;
             });
+
+        $loop->run();
     }
 
     public function availableEventsCount(): int
@@ -215,8 +217,8 @@ final readonly class Client
         Checkpoint $streamCheckpoint,
         Checkpoint $allStreamCheckpoint
     ): void {
-        (new FixedUriConnector(self::IPC_URI, new UnixConnector()))
-            ->connect('')
+        (new UnixConnector())
+            ->connect(self::IPC_URI)
             ->then(function (ConnectionInterface $connection) use ($stream, $streamCheckpoint, $allStreamCheckpoint) {
                 $connection->write(
                     CreateMessage::forAcknowledgement(
