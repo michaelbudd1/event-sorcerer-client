@@ -135,8 +135,7 @@ final readonly class Client
                 });
 
                 $connection->on('data', function (string $events) use ($applicationId) {
-                    echo $events . PHP_EOL;
-//                    $this->addEventsForProcessing($applicationId, $events);
+                    $this->addEventsForProcessing($applicationId, $events);
                 });
             });
 
@@ -294,13 +293,13 @@ final readonly class Client
 
     private function addEventToCache(ApplicationId $applicationId, array $decodedEvent): void
     {
-        if ($this->availableEvents->count($applicationId) >= 100) {
-            sleep(10);
+//        if ($this->availableEvents->count($applicationId) >= 100) {
+//            sleep(10);
 
-            $this->addEventToCache($applicationId, $decodedEvent);
+//            $this->addEventToCache($applicationId, $decodedEvent);
 
-            return;
-        }
+//            return;
+//        }
 
         $this->availableEvents->add($applicationId, $decodedEvent);
     }
