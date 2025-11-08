@@ -140,7 +140,7 @@ final readonly class Client
 
                 $connection->on('data', function (string $events) use ($applicationId) {
                     echo 'processing events' . PHP_EOL;
-                    $this->addEventsForProcessing($applicationId, $events);
+//                    $this->addEventsForProcessing($applicationId, $events);
                 });
 
                 echo 'Main process running' . PHP_EOL;
