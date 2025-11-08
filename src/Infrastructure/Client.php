@@ -226,8 +226,6 @@ final readonly class Client
                         $allStreamCheckpoint
                     )
                 );
-
-                $connection->end();
             }
         );
     }
