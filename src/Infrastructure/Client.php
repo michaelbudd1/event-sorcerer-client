@@ -215,7 +215,7 @@ final readonly class Client
         Checkpoint $streamCheckpoint,
         Checkpoint $allStreamCheckpoint
     ): void {
-        (new FixedUriConnector('unix://' . self::IPC_URI, new UnixConnector()))
+        (new FixedUriConnector(self::IPC_URI, new UnixConnector()))
             ->connect('')
             ->then(function (ConnectionInterface $connection) use ($stream, $streamCheckpoint, $allStreamCheckpoint) {
                 $connection->write(
