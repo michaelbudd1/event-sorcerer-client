@@ -18,7 +18,6 @@ use PearTreeWebLtd\EventSourcererMessageUtilities\Service\CreateMessage;
 use React\EventLoop\Loop;
 use React\Socket\ConnectionInterface;
 use React\Socket\Connector;
-use React\Socket\FixedUriConnector;
 use React\Socket\UnixConnector;
 use React\Socket\UnixServer;
 
@@ -101,47 +100,49 @@ final readonly class Client
             )->then(function (ConnectionInterface $connection) use ($applicationId, &$externalConnection, $loop) {
                 $externalConnection = $connection;
 
+//                $connection->getLocalAddress()
+
                 $connection->write(CreateMessage::forProvidingIdentity($applicationId, $this->config->applicationType));
 
-                if (!$this->sharedProcessCommunication->catchupInProgress()) {
-                    $this->sharedProcessCommunication->flagCatchupIsInProgress();
-
-                    $connection->write(
-                        CreateMessage::forCatchupRequest(
-                            StreamId::fromString('*'),
-                            $applicationId
-                        )
-                    );
-                }
+//                if (!$this->sharedProcessCommunication->catchupInProgress()) {
+//                    $this->sharedProcessCommunication->flagCatchupIsInProgress();
+//
+//                    $connection->write(
+//                        CreateMessage::forCatchupRequest(
+//                            StreamId::fromString('*'),
+//                            $applicationId
+//                        )
+//                    );
+//                }
 
                 echo 'Connected to external service' . PHP_EOL;
 
-                // Create IPC server for workers
-                $server = new UnixServer(self::IPC_URI, $loop);
-
-                $server->on('connection', function (ConnectionInterface $worker) use (&$externalConnection) {
-                    $worker->on('data', function ($data) use (&$worker, &$externalConnection) {
-                        echo 'Yes we received something ' . $data . PHP_EOL;
-
-                        $externalConnection->write($data);
-
-                        /**
-                         * Worker connection must be closed here rather than in calling code, otherwise
-                         * the connection closes before the message has sent
-                         */
-                        $worker->close();
-                    });
-
-                    echo 'Worker connected' . PHP_EOL;
-                });
-
-                $connection->on('data', function ($events) use ($applicationId) {
-                    try {
-                        $this->addEventsForProcessing($applicationId, $events);
-                    } catch (\Throwable $e) {
-                        echo 'Error occurred: ' . $e->getMessage() . PHP_EOL;
-                    }
-                });
+//                // Create IPC server for workers
+//                $server = new UnixServer(self::IPC_URI, $loop);
+//
+//                $server->on('connection', function (ConnectionInterface $worker) use (&$externalConnection) {
+//                    $worker->on('data', function ($data) use (&$worker, &$externalConnection) {
+//                        echo 'Yes we received something ' . $data . PHP_EOL;
+//
+//                        $externalConnection->write($data);
+//
+//                        /**
+//                         * Worker connection must be closed here rather than in calling code, otherwise
+//                         * the connection closes before the message has sent
+//                         */
+//                        $worker->close();
+//                    });
+//
+//                    echo 'Worker connected' . PHP_EOL;
+//                });
+//
+//                $connection->on('data', function ($events) use ($applicationId) {
+//                    try {
+//                        $this->addEventsForProcessing($applicationId, $events);
+//                    } catch (\Throwable $e) {
+//                        echo 'Error occurred: ' . $e->getMessage() . PHP_EOL;
+//                    }
+//                });
 
                 echo 'Main process running' . PHP_EOL;
             });
