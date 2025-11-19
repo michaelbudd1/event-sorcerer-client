@@ -11,6 +11,7 @@ use PearTreeWebLtd\EventSourcererMessageUtilities\Model\ApplicationId;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Model\Checkpoint;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Model\EventName;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Model\EventVersion;
+use PearTreeWebLtd\EventSourcererMessageUtilities\Model\MessageMarkup;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Model\MessageType;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Model\StreamId;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Service\CreateMessage;
@@ -28,7 +29,7 @@ final readonly class Client
         private ?ConnectionInterface $connection = null
     ) {}
 
-    public function connect(): self
+    public function connect(callable $newEventHandler): self
     {
         if (null !== $this->connection) {
             return $this;
@@ -44,7 +45,19 @@ final readonly class Client
                     $this->config->serverHost,
                     $this->config->serverPort
                 )
-            )->then(function (ConnectionInterface $connection) {
+            )->then(function (ConnectionInterface $connection) use (&$newEventHandler) {
+                $connection->on('data', function () use (&$newEventHandler) {
+                    foreach (\array_filter(explode(MessageMarkup::NewEventParser->value, $events)) as $event) {
+                        $decodedEvent = self::decodeEvent($event);
+
+                        if (null === $decodedEvent) {
+                            continue;
+                        }
+
+                        $newEventHandler($decodedEvent);
+                    }
+                });
+
                 return $connection;
             })
         );
