@@ -11,20 +11,16 @@ use PearTreeWebLtd\EventSourcererMessageUtilities\Model\ApplicationId;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Model\Checkpoint;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Model\EventName;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Model\EventVersion;
-use PearTreeWebLtd\EventSourcererMessageUtilities\Model\MessageMarkup;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Model\MessageType;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Model\StreamId;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Service\CreateMessage;
 use React\EventLoop\Loop;
 use React\Socket\ConnectionInterface;
 use React\Socket\Connector;
-use React\Socket\UnixConnector;
-use React\Socket\UnixServer;
+use function React\Async\await;
 
 final readonly class Client
 {
-    private const string IPC_URI = '/tmp/eventsourcerer-shared-socket.sock';
-
     public function __construct(
         private Config $config,
         private AvailableEvents $availableEvents,
@@ -32,143 +28,59 @@ final readonly class Client
         private ?ConnectionInterface $connection = null
     ) {}
 
-//    public function connect(WorkerId $workerId): self
-//    {
-//        if (null !== $this->connection) {
-//            return $this;
-//        }
-//
-//        // Use synchronous socket connection for worker processes
-//        $socket = stream_socket_client(
-//            self::IPC_URI,
-//            $errno,
-//            $errstr,
-//            30
-//        );
-//
-//        if (false === $socket) {
-//            throw new \RuntimeException(
-//                sprintf('Failed to connect to IPC socket: %s (%d)', $errstr, $errno)
-//            );
-//        }
-//
-//        // Wrap in ReactPHP connection interface for compatibility
-//        $workerConnection = new Connection($socket, Loop::get());
-//
-//        $connector = new React\Socket\UnixConnector();
-//
-//        $connector->connect('/tmp/demo.sock')->then(function (React\Socket\ConnectionInterface $connection) {
-//            $connection->write("HELLO\n");
-//        });
-//
-//
-//        $this->availableEvents->declareWorker(
-//            $workerId,
-//            ApplicationId::fromString($this->config->eventSourcererApplicationId)
-//        );
-//
-//        return new self(
-//            $this->config,
-//            $this->availableEvents,
-//            $this->sharedProcessCommunication,
-//            $workerConnection
-//        );
-//    }
-
-    public function connected(): bool
+    public function connect(): self
     {
-        return null !== $this->connection;
-    }
-
-    public function runIPCServer(): void
-    {
-        if (file_exists(self::IPC_URI)) {
-            unlink(self::IPC_URI);
+        if (null !== $this->connection) {
+            return $this;
         }
-
-        $applicationId = ApplicationId::fromString($this->config->eventSourcererApplicationId);
 
         $loop = Loop::get();
 
-        (new Connector(loop: $loop))
+        $connection = await(
+            (new Connector(loop: $loop))
             ->connect(
                 sprintf(
                     '%s:%d',
                     $this->config->serverHost,
                     $this->config->serverPort
                 )
-            )->then(function (ConnectionInterface $connection) use ($applicationId, &$externalConnection, $loop) {
-                $externalConnection = $connection;
+            )->then(function (ConnectionInterface $connection) {
+                return $connection;
+            })
+        );
 
-//                $connection->getLocalAddress()
-
-                $connection->write(CreateMessage::forProvidingIdentity($applicationId, $this->config->applicationType));
-
-//                if (!$this->sharedProcessCommunication->catchupInProgress()) {
-//                    $this->sharedProcessCommunication->flagCatchupIsInProgress();
-//
-//                    $connection->write(
-//                        CreateMessage::forCatchupRequest(
-//                            StreamId::fromString('*'),
-//                            $applicationId
-//                        )
-//                    );
-//                }
-
-                echo 'Connected to external service' . PHP_EOL;
-
-//                // Create IPC server for workers
-//                $server = new UnixServer(self::IPC_URI, $loop);
-//
-//                $server->on('connection', function (ConnectionInterface $worker) use (&$externalConnection) {
-//                    $worker->on('data', function ($data) use (&$worker, &$externalConnection) {
-//                        echo 'Yes we received something ' . $data . PHP_EOL;
-//
-//                        $externalConnection->write($data);
-//
-//                        /**
-//                         * Worker connection must be closed here rather than in calling code, otherwise
-//                         * the connection closes before the message has sent
-//                         */
-//                        $worker->close();
-//                    });
-//
-//                    echo 'Worker connected' . PHP_EOL;
-//                });
-//
-//                $connection->on('data', function ($events) use ($applicationId) {
-//                    try {
-//                        $this->addEventsForProcessing($applicationId, $events);
-//                    } catch (\Throwable $e) {
-//                        echo 'Error occurred: ' . $e->getMessage() . PHP_EOL;
-//                    }
-//                });
-
-                echo 'Main process running' . PHP_EOL;
-            });
-
-        $loop->run();
-    }
-
-    public function availableEventsCount(): int
-    {
-        return $this->availableEvents->count(
-            ApplicationId::fromString($this->config->eventSourcererApplicationId)
+        return new self(
+            $this->config,
+            $this->availableEvents,
+            $this->sharedProcessCommunication,
+            $connection
         );
     }
 
-    public function hasEventsAvailable(): bool
+    public function connected(): bool
     {
-        return 0 !== $this->availableEventsCount();
+        return null !== $this->connection;
     }
 
-    public function fetchOneMessage(WorkerId $workerId): ?array
-    {
-        return $this->availableEvents->fetchOne(
-            $workerId,
-            ApplicationId::fromString($this->config->eventSourcererApplicationId)
-        );
-    }
+//    public function availableEventsCount(): int
+//    {
+//        return $this->availableEvents->count(
+//            ApplicationId::fromString($this->config->eventSourcererApplicationId)
+//        );
+//    }
+
+//    public function hasEventsAvailable(): bool
+//    {
+//        return 0 !== $this->availableEventsCount();
+//    }
+//
+//    public function fetchOneMessage(WorkerId $workerId): ?array
+//    {
+//        return $this->availableEvents->fetchOne(
+//            $workerId,
+//            ApplicationId::fromString($this->config->eventSourcererApplicationId)
+//        );
+//    }
 
     public function attachWorker(WorkerId $workerId): void
     {
@@ -180,11 +92,10 @@ final readonly class Client
 
     public function detachWorker(WorkerId $workerId): void
     {
-        $this->availableEvents->detachWorker($workerId);
-
+//        $this->availableEvents->detachWorker($workerId);
 //        if ($this->availableEvents->hasNoWorkersRunning()) {
-        $this->sharedProcessCommunication->clear();
-        $this->availableEvents->clear(ApplicationId::fromString($this->config->eventSourcererApplicationId));
+//        $this->sharedProcessCommunication->clear();
+//        $this->availableEvents->clear(ApplicationId::fromString($this->config->eventSourcererApplicationId));
 //        }
     }
 
@@ -224,25 +135,16 @@ final readonly class Client
         Checkpoint $streamCheckpoint,
         Checkpoint $allStreamCheckpoint
     ): void {
-        $loop = Loop::get();
-
-        (new UnixConnector($loop))
-            ->connect(self::IPC_URI)
-            ->then(function (ConnectionInterface $connection) use ($stream, $streamCheckpoint, $allStreamCheckpoint) {
-                $connection->write(
-                    CreateMessage::forAcknowledgement(
-                        $stream,
-                        ApplicationId::fromString($this->config->eventSourcererApplicationId),
-                        $streamCheckpoint,
-                        $allStreamCheckpoint
-                    )
-                );
-
-                $connection->end();
-            }
-        );
-
-        $loop->run();
+        $this
+            ?->connection
+            ->write(
+                CreateMessage::forAcknowledgement(
+                    $stream,
+                    ApplicationId::fromString($this->config->eventSourcererApplicationId),
+                    $streamCheckpoint,
+                    $allStreamCheckpoint
+                )
+            );
     }
 
     public function writeNewEvent(
@@ -252,19 +154,15 @@ final readonly class Client
         array $payload
     ): void {
         $this
-            ->connection
-            ->then(function (ConnectionInterface $connection) use ($streamId, $eventName, $eventVersion, $payload) {
-                $connection->write(
-                    CreateMessage::forWriteNewEvent(
-                        $streamId,
-                        $eventName,
-                        $eventVersion,
-                        $payload
-                    )
-                );
-
-                $connection->end();
-            });
+            ?->connection
+            ->write(
+                CreateMessage::forWriteNewEvent(
+                    $streamId,
+                    $eventName,
+                    $eventVersion,
+                    $payload
+                )
+            );
     }
 
     public function list(string $applicationId): iterable
@@ -287,21 +185,21 @@ final readonly class Client
         );
     }
 
-    private function addEventsForProcessing(ApplicationId $applicationId, string $events): void
-    {
-        foreach (\array_filter(explode(MessageMarkup::NewEventParser->value, $events)) as $event) {
-            $decodedEvent = self::decodeEvent($event);
+//    private function addEventsForProcessing(ApplicationId $applicationId, string $events): void
+//    {
+//        foreach (\array_filter(explode(MessageMarkup::NewEventParser->value, $events)) as $event) {
+//            $decodedEvent = self::decodeEvent($event);
+//
+//            if (null === $decodedEvent) {
+//                continue;
+//            }
+//
+//            $this->addEventToCache($applicationId, $decodedEvent);
+//        }
+//    }
 
-            if (null === $decodedEvent) {
-                continue;
-            }
-
-            $this->addEventToCache($applicationId, $decodedEvent);
-        }
-    }
-
-    private function addEventToCache(ApplicationId $applicationId, array $decodedEvent): void
-    {
+//    private function addEventToCache(ApplicationId $applicationId, array $decodedEvent): void
+//    {
 //        if ($this->availableEvents->count($applicationId) >= 100) {
 //            sleep(10);
 
@@ -310,6 +208,6 @@ final readonly class Client
 //            return;
 //        }
 
-        $this->availableEvents->add($applicationId, $decodedEvent);
-    }
+//        $this->availableEvents->add($applicationId, $decodedEvent);
+//    }
 }
