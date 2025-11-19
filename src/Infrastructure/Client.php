@@ -49,9 +49,6 @@ final readonly class Client
             })
         );
 
-        var_dump($connection, 'here'); die;
-
-
         return new self(
             $this->config,
             $this->availableEvents,
