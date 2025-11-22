@@ -24,8 +24,8 @@ final readonly class Client
 {
     public function __construct(
         private Config $config,
-        private AvailableEvents $availableEvents,
-        private SharedProcessCommunication $sharedProcessCommunication,
+//        private AvailableEvents $availableEvents,
+//        private SharedProcessCommunication $sharedProcessCommunication,
         private ?ConnectionInterface $connection = null
     ) {}
 
@@ -73,8 +73,8 @@ final readonly class Client
 
         return new self(
             $this->config,
-            $this->availableEvents,
-            $this->sharedProcessCommunication,
+//            $this->availableEvents,
+//            $this->sharedProcessCommunication,
             $connection
         );
     }
@@ -83,43 +83,43 @@ final readonly class Client
     {
         return null !== $this->connection;
     }
-
-    public function availableEventsCount(): int
-    {
-        return $this->availableEvents->count(
-            ApplicationId::fromString($this->config->eventSourcererApplicationId)
-        );
-    }
-
-    public function hasEventsAvailable(): bool
-    {
-        return 0 !== $this->availableEventsCount();
-    }
-
-    public function fetchOneMessage(WorkerId $workerId): ?array
-    {
-        return $this->availableEvents->fetchOne(
-            $workerId,
-            ApplicationId::fromString($this->config->eventSourcererApplicationId)
-        );
-    }
-
-    public function attachWorker(WorkerId $workerId): void
-    {
-        $this->availableEvents->declareWorker(
-            $workerId,
-            ApplicationId::fromString($this->config->eventSourcererApplicationId)
-        );
-    }
-
-    public function detachWorker(WorkerId $workerId): void
-    {
+//
+//    public function availableEventsCount(): int
+//    {
+//        return $this->availableEvents->count(
+//            ApplicationId::fromString($this->config->eventSourcererApplicationId)
+//        );
+//    }
+//
+//    public function hasEventsAvailable(): bool
+//    {
+//        return 0 !== $this->availableEventsCount();
+//    }
+//
+//    public function fetchOneMessage(WorkerId $workerId): ?array
+//    {
+//        return $this->availableEvents->fetchOne(
+//            $workerId,
+//            ApplicationId::fromString($this->config->eventSourcererApplicationId)
+//        );
+//    }
+//
+//    public function attachWorker(WorkerId $workerId): void
+//    {
+//        $this->availableEvents->declareWorker(
+//            $workerId,
+//            ApplicationId::fromString($this->config->eventSourcererApplicationId)
+//        );
+//    }
+//
+//    public function detachWorker(WorkerId $workerId): void
+//    {
 //        $this->availableEvents->detachWorker($workerId);
 //        if ($this->availableEvents->hasNoWorkersRunning()) {
 //        $this->sharedProcessCommunication->clear();
 //        $this->availableEvents->clear(ApplicationId::fromString($this->config->eventSourcererApplicationId));
 //        }
-    }
+//    }
 
 //    public function flagCatchupComplete(): void
 //    {
@@ -152,22 +152,22 @@ final readonly class Client
         }
     }
 
-    public function acknowledgeEvent(
-        StreamId $stream,
-        Checkpoint $streamCheckpoint,
-        Checkpoint $allStreamCheckpoint
-    ): void {
-        $this
-            ->connection
-            ?->write(
-                CreateMessage::forAcknowledgement(
-                    $stream,
-                    ApplicationId::fromString($this->config->eventSourcererApplicationId),
-                    $streamCheckpoint,
-                    $allStreamCheckpoint
-                )
-            );
-    }
+//    public function acknowledgeEvent(
+//        StreamId $stream,
+//        Checkpoint $streamCheckpoint,
+//        Checkpoint $allStreamCheckpoint
+//    ): void {
+//        $this
+//            ->connection
+//            ?->write(
+//                CreateMessage::forAcknowledgement(
+//                    $stream,
+//                    ApplicationId::fromString($this->config->eventSourcererApplicationId),
+//                    $streamCheckpoint,
+//                    $allStreamCheckpoint
+//                )
+//            );
+//    }
 
     public function writeNewEvent(
         StreamId $streamId,
@@ -186,18 +186,18 @@ final readonly class Client
                 )
             );
     }
-
-    public function list(string $applicationId): iterable
-    {
-        return $this->availableEvents->list(
-            ApplicationId::fromString($applicationId)
-        );
-    }
-
-    public function summary(ApplicationId $applicationId): array
-    {
-        return $this->availableEvents->summary($applicationId);
-    }
+//
+//    public function list(string $applicationId): iterable
+//    {
+//        return $this->availableEvents->list(
+//            ApplicationId::fromString($applicationId)
+//        );
+//    }
+//
+//    public function summary(ApplicationId $applicationId): array
+//    {
+//        return $this->availableEvents->summary($applicationId);
+//    }
 
     private static function jsonDecodeErrorMessage(string $parsedEvent): string
     {
