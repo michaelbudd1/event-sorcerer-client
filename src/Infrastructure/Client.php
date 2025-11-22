@@ -46,7 +46,7 @@ final readonly class Client
                     $this->config->serverPort
                 )
             )->then(function (ConnectionInterface $connection) use (&$newEventHandler) {
-                $connection->on('data', function () use (&$newEventHandler) {
+                $connection->on('data', function (string $events) use (&$newEventHandler) {
                     foreach (\array_filter(explode(MessageMarkup::NewEventParser->value, $events)) as $event) {
                         $decodedEvent = self::decodeEvent($event);
 
@@ -75,25 +75,25 @@ final readonly class Client
         return null !== $this->connection;
     }
 
-//    public function availableEventsCount(): int
-//    {
-//        return $this->availableEvents->count(
-//            ApplicationId::fromString($this->config->eventSourcererApplicationId)
-//        );
-//    }
+    public function availableEventsCount(): int
+    {
+        return $this->availableEvents->count(
+            ApplicationId::fromString($this->config->eventSourcererApplicationId)
+        );
+    }
 
-//    public function hasEventsAvailable(): bool
-//    {
-//        return 0 !== $this->availableEventsCount();
-//    }
-//
-//    public function fetchOneMessage(WorkerId $workerId): ?array
-//    {
-//        return $this->availableEvents->fetchOne(
-//            $workerId,
-//            ApplicationId::fromString($this->config->eventSourcererApplicationId)
-//        );
-//    }
+    public function hasEventsAvailable(): bool
+    {
+        return 0 !== $this->availableEventsCount();
+    }
+
+    public function fetchOneMessage(WorkerId $workerId): ?array
+    {
+        return $this->availableEvents->fetchOne(
+            $workerId,
+            ApplicationId::fromString($this->config->eventSourcererApplicationId)
+        );
+    }
 
     public function attachWorker(WorkerId $workerId): void
     {
@@ -112,10 +112,10 @@ final readonly class Client
 //        }
     }
 
-    public function flagCatchupComplete(): void
-    {
-        $this->sharedProcessCommunication->flagCatchupIsNotInProgress();
-    }
+//    public function flagCatchupComplete(): void
+//    {
+//        $this->sharedProcessCommunication->flagCatchupIsNotInProgress();
+//    }
 
     private static function decodeEvent(string $event): ?array
     {
