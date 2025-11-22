@@ -29,7 +29,7 @@ final readonly class Client
         private ?ConnectionInterface $connection = null
     ) {}
 
-    public function connect(callable $newEventHandler): self
+    public function connect(callable $onConnectionHandler, callable $newEventHandler): self
     {
         if (null !== $this->connection) {
             return $this;
@@ -45,7 +45,9 @@ final readonly class Client
                     $this->config->serverHost,
                     $this->config->serverPort
                 )
-            )->then(function (ConnectionInterface $connection) use (&$newEventHandler) {
+            )->then(function (ConnectionInterface $connection) use (&$onConnectionHandler, &$newEventHandler) {
+                $onConnectionHandler();
+
                 $connection->on('data', function (string $events) use (&$newEventHandler) {
                     foreach (\array_filter(explode(MessageMarkup::NewEventParser->value, $events)) as $event) {
                         $decodedEvent = self::decodeEvent($event);
@@ -156,8 +158,8 @@ final readonly class Client
         Checkpoint $allStreamCheckpoint
     ): void {
         $this
-            ?->connection
-            ->write(
+            ->connection
+            ?->write(
                 CreateMessage::forAcknowledgement(
                     $stream,
                     ApplicationId::fromString($this->config->eventSourcererApplicationId),
