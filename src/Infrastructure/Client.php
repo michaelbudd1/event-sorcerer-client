@@ -126,6 +126,11 @@ final readonly class Client
 //        $this->sharedProcessCommunication->flagCatchupIsNotInProgress();
 //    }
 
+    public function applicationId(): ApplicationId
+    {
+        return ApplicationId::fromString($this->config->eventSourcererApplicationId);
+    }
+
     private static function decodeEvent(string $event): ?array
     {
         try {
