@@ -81,6 +81,13 @@ final readonly class Client
     {
         return null !== $this->connection;
     }
+
+    public function connection(): ?ConnectionInterface
+    {
+        return $this->connection;
+    }
+
+
 //
 //    public function availableEventsCount(): int
 //    {
