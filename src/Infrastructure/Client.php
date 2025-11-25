@@ -24,7 +24,7 @@ use function React\Async\await;
 
 final readonly class Client
 {
-    private const string IPC_URI = '/tmp/eventsourcerer-shared-socket.sock';
+    public const string IPC_URI = '/tmp/eventsourcerer-shared-socket.sock';
 
     public function __construct(
         private Config $config,
