@@ -266,7 +266,7 @@ final readonly class Client
                     echo 'Warning: External connection not ready yet' . PHP_EOL;
                 }
 
-                $worker->close();
+//                $worker->close();
 
                 /**
                  * Worker connection must be closed here rather than in calling code, otherwise
