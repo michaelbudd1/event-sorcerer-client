@@ -16,12 +16,16 @@ use PearTreeWebLtd\EventSourcererMessageUtilities\Model\MessageType;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Model\StreamId;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Service\CreateMessage;
 use React\EventLoop\Loop;
+use React\EventLoop\LoopInterface;
 use React\Socket\ConnectionInterface;
 use React\Socket\Connector;
+use React\Socket\UnixServer;
 use function React\Async\await;
 
 final readonly class Client
 {
+    private const string IPC_URI = '/tmp/eventsourcerer-shared-socket.sock';
+
     public function __construct(
         private Config $config,
 //        private AvailableEvents $availableEvents,
@@ -45,7 +49,7 @@ final readonly class Client
                     $this->config->serverHost,
                     $this->config->serverPort
                 )
-            )->then(function (ConnectionInterface $connection) use ( &$newEventHandler) {
+            )->then(function (ConnectionInterface $connection) use ( &$newEventHandler, &$loop) {
                 $connection->on('data', function (string $events) use (&$newEventHandler) {
                     foreach (\array_filter(explode(MessageMarkup::NewEventParser->value, $events)) as $event) {
                         $decodedEvent = self::decodeEvent($event);
@@ -64,6 +68,8 @@ final readonly class Client
                         $this->config->applicationType
                     )
                 );
+
+                $this->createIPCServer($connection, $loop);
 
                 return $connection;
             })
@@ -242,4 +248,40 @@ final readonly class Client
 
 //        $this->availableEvents->add($applicationId, $decodedEvent);
 //    }
+
+    private function createIPCServer(ConnectionInterface $externalConnection, LoopInterface $loop): void
+    {
+        self::deleteSockFile();
+
+        // Create IPC server for workers
+        $server = new UnixServer(self::IPC_URI, $loop);
+
+        $server->on('connection', function (ConnectionInterface $worker) use (&$externalConnection) {
+            $worker->on('data', function ($data) use (&$worker, &$externalConnection) {
+                if ($externalConnection !== null) {
+                    echo 'IPC server just wrote something' . PHP_EOL;
+
+                    $externalConnection->write($data);
+                } else {
+                    echo 'Warning: External connection not ready yet' . PHP_EOL;
+                }
+
+                $worker->close();
+
+                /**
+                 * Worker connection must be closed here rather than in calling code, otherwise
+                 * the connection closes before the message has sent
+                 */
+            });
+
+            echo 'Worker connected' . PHP_EOL;
+        });
+    }
+
+    private static function deleteSockFile(): void
+    {
+        if (file_exists(self::IPC_URI)) {
+            unlink(self::IPC_URI);
+        }
+    }
 }
