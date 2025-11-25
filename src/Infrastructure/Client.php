@@ -261,6 +261,15 @@ final readonly class Client
                 if ($externalConnection !== null) {
                     echo 'IPC server just wrote something' . PHP_EOL;
 
+                    // Wait for the write buffer to drain before closing
+                    if ($externalConnection->isWritable()) {
+                        $loop->addTimer(0.1, function () use ($worker) {
+                            $worker->close();
+                        });
+                    } else {
+                        $worker->close();
+                    }
+
                     $externalConnection->write($data);
                 } else {
                     echo 'Warning: External connection not ready yet' . PHP_EOL;
