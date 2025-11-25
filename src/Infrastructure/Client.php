@@ -256,8 +256,8 @@ final readonly class Client
         // Create IPC server for workers
         $server = new UnixServer(self::IPC_URI, $loop);
 
-        $server->on('connection', function (ConnectionInterface $worker) use ($externalConnection) {
-            $worker->on('data', function ($data) use ($worker, $externalConnection) {
+        $server->on('connection', function (ConnectionInterface $worker) use ($externalConnection, $loop) {
+            $worker->on('data', function ($data) use ($worker, $externalConnection, $loop) {
                 if ($externalConnection !== null) {
                     echo 'IPC server just wrote something' . PHP_EOL;
 
@@ -266,7 +266,9 @@ final readonly class Client
                     echo 'Warning: External connection not ready yet' . PHP_EOL;
                 }
 
-//                $worker->close();
+                $loop->futureTick(function () use ($worker) {
+                    $worker->close();
+                });
 
                 /**
                  * Worker connection must be closed here rather than in calling code, otherwise
