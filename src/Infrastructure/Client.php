@@ -73,8 +73,8 @@ final readonly class Client
 
         self::deleteSockFile();
 
-        $loop->addTimer(1, function () use ($loop, $externalConnection) {
-            (new UnixServer(self::IPC_URI, $loop))
+//        $loop->addTimer(1, function () use ($loop, $externalConnection) {
+            (new UnixServer(self::IPC_URI))
                 ->on('connection', function (ConnectionInterface $workerConnection) use (&$externalConnection) {
                     $workerConnection->on('data', function ($event) use (&$externalConnection) {
                         echo 'Received: ' . $event . PHP_EOL;
@@ -82,18 +82,13 @@ final readonly class Client
                         /** @var ConnectionInterface $connection */
                         $externalConnection->write($event);
                         $externalConnection->end();
-
-//                        // Schedule close on next tick to allow write to complete
-//                        $loop->futureTick(function () use ($workerConnection) {
-//                            $workerConnection->close();
-//                        });
                     });
 
                     echo 'Worker connected!' . PHP_EOL;
                 });
-        });
+//        });
 
-        $loop->run();
+//        $loop->run();
 
         return new self(
             $this->config,
