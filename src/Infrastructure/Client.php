@@ -35,8 +35,6 @@ final readonly class Client
             return $this;
         }
 
-        $externalConnection = null;
-
         $connection = (new Connector())
             ->connect(
                 sprintf(
@@ -44,9 +42,7 @@ final readonly class Client
                     $this->config->serverHost,
                     $this->config->serverPort
                 )
-            )->then(function (ConnectionInterface $connection) use ($newEventHandler, &$externalConnection) {
-                $externalConnection = $connection;
-
+            )->then(function (ConnectionInterface $connection) use ($newEventHandler) {
                 $connection->on('data', function (string $events) use ($newEventHandler) {
                     foreach (\array_filter(explode(MessageMarkup::NewEventParser->value, $events)) as $event) {
                         $decodedEvent = self::decodeEvent($event);
@@ -56,6 +52,10 @@ final readonly class Client
                         }
 
                         $newEventHandler($decodedEvent);
+
+                        Loop::addTimer(2, function () {
+                            echo 'did we get that message? ' . PHP_EOL;
+                        });
                     }
                 });
 
@@ -68,26 +68,6 @@ final readonly class Client
 
                 return $connection;
             });
-
-        self::deleteSockFile();
-
-//        $loop->addTimer(1, function () use ($loop, $externalConnection) {
-            (new UnixServer(self::IPC_URI))
-                ->on('connection', function (ConnectionInterface $workerConnection) use (&$externalConnection) {
-                    $workerConnection->on('data', function ($event) use (&$externalConnection) {
-                        echo 'Received: ' . $event . PHP_EOL;
-
-                        /** @var ConnectionInterface $connection */
-                        $externalConnection->write($event);
-                    });
-
-                    echo 'Worker connected!' . PHP_EOL;
-                });
-//        });
-
-//        $loop->run();
-
-        Loop::run();
 
         return new self(
             $this->config,
