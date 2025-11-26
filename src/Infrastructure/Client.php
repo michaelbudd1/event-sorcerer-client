@@ -85,7 +85,7 @@ final readonly class Client
                         $loop->futureTick(function () use ($workerConnection) {
                             $workerConnection->close();
                         });
-                    })
+                    });
 
                     echo 'Worker connected!' . PHP_EOL;
                 });
