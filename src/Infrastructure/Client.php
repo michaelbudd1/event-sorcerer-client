@@ -40,7 +40,9 @@ final readonly class Client
             return $this;
         }
 
-        $connection = (new Connector())
+        $loop = Loop::get();
+
+        $connection = (new Connector(loop: $loop))
             ->connect(
                 sprintf(
                     '%s:%d',
@@ -60,10 +62,6 @@ final readonly class Client
                     }
                 });
 
-                Loop::futureTick(function () use ($connection) {
-                    echo 'tick' . PHP_EOL;
-                });
-
                 $connection->write(
                     CreateMessage::forProvidingIdentity(
                         ApplicationId::fromString($this->config->eventSourcererApplicationId),
@@ -71,10 +69,15 @@ final readonly class Client
                     )
                 );
 
-//                $this->createIPCServer($connection);
-
                 return $connection;
             });
+
+        $loop->addTimer(1, function () use ($loop) {
+            (new UnixServer(self::IPC_URI, $loop))
+                ->on('connection', function (ConnectionInterface $workerConnection) {
+                    echo 'Worker connected!' . PHP_EOL;
+                });
+        });
 
         return new self(
             $this->config,
