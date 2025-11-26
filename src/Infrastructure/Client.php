@@ -4,9 +4,6 @@ declare(strict_types=1);
 
 namespace PearTreeWeb\EventSourcerer\Client\Infrastructure;
 
-use PearTreeWeb\EventSourcerer\Client\Domain\Model\WorkerId;
-use PearTreeWeb\EventSourcerer\Client\Domain\Repository\AvailableEvents;
-use PearTreeWeb\EventSourcerer\Client\Domain\Repository\SharedProcessCommunication;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Model\ApplicationId;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Model\Checkpoint;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Model\EventName;
@@ -16,12 +13,10 @@ use PearTreeWebLtd\EventSourcererMessageUtilities\Model\MessageType;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Model\StreamId;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Service\CreateMessage;
 use React\EventLoop\Loop;
-use React\EventLoop\LoopInterface;
 use React\Promise\PromiseInterface;
 use React\Socket\ConnectionInterface;
 use React\Socket\Connector;
 use React\Socket\UnixServer;
-use function React\Async\await;
 
 final readonly class Client
 {
@@ -42,6 +37,8 @@ final readonly class Client
 
         $loop = Loop::get();
 
+        $externalConnection = null;
+
         $connection = (new Connector(loop: $loop))
             ->connect(
                 sprintf(
@@ -49,8 +46,10 @@ final readonly class Client
                     $this->config->serverHost,
                     $this->config->serverPort
                 )
-            )->then(function (ConnectionInterface $connection) use (&$newEventHandler) {
-                $connection->on('data', function (string $events) use (&$newEventHandler) {
+            )->then(function (ConnectionInterface $connection) use ($newEventHandler, &$externalConnection) {
+                $externalConnection = $connection;
+
+                $connection->on('data', function (string $events) use ($newEventHandler) {
                     foreach (\array_filter(explode(MessageMarkup::NewEventParser->value, $events)) as $event) {
                         $decodedEvent = self::decodeEvent($event);
 
@@ -74,12 +73,12 @@ final readonly class Client
 
         self::deleteSockFile();
 
-        $loop->addTimer(2, function () use ($loop, $connection) {
+        $loop->addTimer(2, function () use ($loop, $externalConnection) {
             (new UnixServer(self::IPC_URI, $loop))
-                ->on('connection', function (ConnectionInterface $workerConnection) use ($connection, $loop) {
-                    $workerConnection->on('data', function ($event) use ($connection, $workerConnection, $loop) {
+                ->on('connection', function (ConnectionInterface $workerConnection) use (&$externalConnection) {
+                    $workerConnection->on('data', function ($event) use (&$externalConnection) {
                         /** @var ConnectionInterface $connection */
-                        $connection->write($event);
+                        $externalConnection->write($event);
 
 //                        // Schedule close on next tick to allow write to complete
 //                        $loop->futureTick(function () use ($workerConnection) {
