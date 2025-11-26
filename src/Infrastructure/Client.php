@@ -31,7 +31,7 @@ final readonly class Client
         private Config $config,
 //        private AvailableEvents $availableEvents,
 //        private SharedProcessCommunication $sharedProcessCommunication,
-        private ConnectionInterface|PromiseInterface $connection
+        private ConnectionInterface|PromiseInterface|null $connection
     ) {}
 
     public function connect(callable $newEventHandler): self
