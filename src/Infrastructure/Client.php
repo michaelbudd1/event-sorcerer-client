@@ -79,6 +79,8 @@ final readonly class Client
 
                         /** @var ConnectionInterface $connection */
                         $externalConnection->write($event);
+
+                        Loop::addTimer(0.001, function() {});
                     });
 
                     echo 'Worker connected!' . PHP_EOL;
