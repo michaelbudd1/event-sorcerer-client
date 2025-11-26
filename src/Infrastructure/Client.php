@@ -91,6 +91,8 @@ final readonly class Client
                 });
         });
 
+        $loop->run();
+
         return new self(
             $this->config,
 //            $this->availableEvents,
