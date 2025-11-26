@@ -35,11 +35,9 @@ final readonly class Client
             return $this;
         }
 
-        $loop = Loop::get();
-
         $externalConnection = null;
 
-        $connection = (new Connector(loop: $loop))
+        $connection = (new Connector())
             ->connect(
                 sprintf(
                     '%s:%d',
