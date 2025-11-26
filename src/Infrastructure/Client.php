@@ -34,22 +34,20 @@ final readonly class Client
         private ConnectionInterface|PromiseInterface|null $connection = null
     ) {}
 
-    public function connect(callable $newEventHandler): self
+    public function connect(callable $newEventHandler, ?LoopInterface $loop = null): self
     {
         if (null !== $this->connection) {
             return $this;
         }
 
-//        $loop = Loop::get();
-
-        $connection = (new Connector())
+        $connection = (new Connector(loop: $loop))
             ->connect(
                 sprintf(
                     '%s:%d',
                     $this->config->serverHost,
                     $this->config->serverPort
                 )
-            )->then(function (ConnectionInterface $connection) use ( &$newEventHandler) {
+            )->then(function (ConnectionInterface $connection) use (&$newEventHandler, $loop) {
                 $connection->on('data', function (string $events) use (&$newEventHandler) {
                     foreach (\array_filter(explode(MessageMarkup::NewEventParser->value, $events)) as $event) {
                         $decodedEvent = self::decodeEvent($event);
@@ -69,7 +67,7 @@ final readonly class Client
                     )
                 );
 
-                $this->createIPCServer($connection);
+                $this->createIPCServer($connection, $loop);
 
                 return $connection;
             });
@@ -246,23 +244,23 @@ final readonly class Client
 //        $this->availableEvents->add($applicationId, $decodedEvent);
 //    }
 
-    private function createIPCServer(ConnectionInterface $externalConnection): void
+    private function createIPCServer(ConnectionInterface $externalConnection, ?LoopInterface $loop): void
     {
         self::deleteSockFile();
 
         // Create IPC server for workers
-        $server = new UnixServer(self::IPC_URI);
+        $server = new UnixServer(self::IPC_URI, $loop);
 
-        $server->on('connection', function (ConnectionInterface $worker) use ($externalConnection) {
-            $worker->on('data', function ($data) use ($worker, $externalConnection) {
+        $server->on('connection', function (ConnectionInterface $worker) use ($externalConnection, $loop) {
+            $worker->on('data', function ($data) use ($worker, $externalConnection, $loop) {
                 if ($externalConnection !== null) {
                     echo 'IPC server just wrote something' . PHP_EOL;
 
                     // Wait for the write buffer to drain before closing
                     if ($externalConnection->isWritable()) {
-//                        $loop->addTimer(0.1, function () use ($worker) {
+                        $loop->addTimer(0.1, function () use ($worker) {
                             $worker->close();
-//                        });
+                        });
                     }
 
                     $externalConnection->write($data);
