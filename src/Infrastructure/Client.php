@@ -74,17 +74,17 @@ final readonly class Client
 
         self::deleteSockFile();
 
-        $loop->addTimer(1, function () use ($loop, $connection) {
+        $loop->addTimer(2, function () use ($loop, $connection) {
             (new UnixServer(self::IPC_URI, $loop))
                 ->on('connection', function (ConnectionInterface $workerConnection) use ($connection, $loop) {
                     $workerConnection->on('data', function ($event) use ($connection, $workerConnection, $loop) {
                         /** @var ConnectionInterface $connection */
                         $connection->write($event);
 
-                        // Schedule close on next tick to allow write to complete
-                        $loop->futureTick(function () use ($workerConnection) {
-                            $workerConnection->close();
-                        });
+//                        // Schedule close on next tick to allow write to complete
+//                        $loop->futureTick(function () use ($workerConnection) {
+//                            $workerConnection->close();
+//                        });
                     });
 
                     echo 'Worker connected!' . PHP_EOL;
