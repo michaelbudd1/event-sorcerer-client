@@ -73,12 +73,13 @@ final readonly class Client
 
         self::deleteSockFile();
 
-        $loop->addTimer(2, function () use ($loop, $externalConnection) {
+        $loop->addTimer(1, function () use ($loop, $externalConnection) {
             (new UnixServer(self::IPC_URI, $loop))
                 ->on('connection', function (ConnectionInterface $workerConnection) use (&$externalConnection) {
                     $workerConnection->on('data', function ($event) use (&$externalConnection) {
                         /** @var ConnectionInterface $connection */
                         $externalConnection->write($event);
+                        $externalConnection->end();
 
 //                        // Schedule close on next tick to allow write to complete
 //                        $loop->futureTick(function () use ($workerConnection) {
