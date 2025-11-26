@@ -17,6 +17,7 @@ use PearTreeWebLtd\EventSourcererMessageUtilities\Model\StreamId;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Service\CreateMessage;
 use React\EventLoop\Loop;
 use React\EventLoop\LoopInterface;
+use React\Promise\PromiseInterface;
 use React\Socket\ConnectionInterface;
 use React\Socket\Connector;
 use React\Socket\UnixServer;
@@ -30,7 +31,7 @@ final readonly class Client
         private Config $config,
 //        private AvailableEvents $availableEvents,
 //        private SharedProcessCommunication $sharedProcessCommunication,
-        private ?ConnectionInterface $connection = null
+        private ConnectionInterface|PromiseInterface $connection
     ) {}
 
     public function connect(callable $newEventHandler): self
@@ -39,17 +40,16 @@ final readonly class Client
             return $this;
         }
 
-        $loop = Loop::get();
+//        $loop = Loop::get();
 
-        $connection = await(
-            (new Connector(loop: $loop))
+        $connection = (new Connector())
             ->connect(
                 sprintf(
                     '%s:%d',
                     $this->config->serverHost,
                     $this->config->serverPort
                 )
-            )->then(function (ConnectionInterface $connection) use ( &$newEventHandler, &$loop) {
+            )->then(function (ConnectionInterface $connection) use ( &$newEventHandler) {
                 $connection->on('data', function (string $events) use (&$newEventHandler) {
                     foreach (\array_filter(explode(MessageMarkup::NewEventParser->value, $events)) as $event) {
                         $decodedEvent = self::decodeEvent($event);
@@ -69,11 +69,10 @@ final readonly class Client
                     )
                 );
 
-                $this->createIPCServer($connection, $loop);
+                $this->createIPCServer($connection);
 
                 return $connection;
-            })
-        );
+            });
 
         return new self(
             $this->config,
@@ -92,8 +91,6 @@ final readonly class Client
     {
         return $this->connection;
     }
-
-
 //
 //    public function availableEventsCount(): int
 //    {
@@ -249,12 +246,12 @@ final readonly class Client
 //        $this->availableEvents->add($applicationId, $decodedEvent);
 //    }
 
-    private function createIPCServer(ConnectionInterface $externalConnection, LoopInterface $loop): void
+    private function createIPCServer(ConnectionInterface $externalConnection): void
     {
         self::deleteSockFile();
 
         // Create IPC server for workers
-        $server = new UnixServer(self::IPC_URI, $loop);
+        $server = new UnixServer(self::IPC_URI);
 
         $server->on('connection', function (ConnectionInterface $worker) use ($externalConnection, $loop) {
             $worker->on('data', function ($data) use ($worker, $externalConnection, $loop) {
@@ -274,10 +271,6 @@ final readonly class Client
                 } else {
                     echo 'Warning: External connection not ready yet' . PHP_EOL;
                 }
-
-                $loop->futureTick(function () use ($worker) {
-                    $worker->close();
-                });
 
                 /**
                  * Worker connection must be closed here rather than in calling code, otherwise
