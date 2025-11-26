@@ -72,6 +72,8 @@ final readonly class Client
                 return $connection;
             });
 
+        self::deleteSockFile();
+
         $loop->addTimer(1, function () use ($loop) {
             (new UnixServer(self::IPC_URI, $loop))
                 ->on('connection', function (ConnectionInterface $workerConnection) {
