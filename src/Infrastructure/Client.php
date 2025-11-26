@@ -253,18 +253,16 @@ final readonly class Client
         // Create IPC server for workers
         $server = new UnixServer(self::IPC_URI);
 
-        $server->on('connection', function (ConnectionInterface $worker) use ($externalConnection, $loop) {
-            $worker->on('data', function ($data) use ($worker, $externalConnection, $loop) {
+        $server->on('connection', function (ConnectionInterface $worker) use ($externalConnection) {
+            $worker->on('data', function ($data) use ($worker, $externalConnection) {
                 if ($externalConnection !== null) {
                     echo 'IPC server just wrote something' . PHP_EOL;
 
                     // Wait for the write buffer to drain before closing
                     if ($externalConnection->isWritable()) {
-                        $loop->addTimer(0.1, function () use ($worker) {
+//                        $loop->addTimer(0.1, function () use ($worker) {
                             $worker->close();
-                        });
-                    } else {
-                        $worker->close();
+//                        });
                     }
 
                     $externalConnection->write($data);
