@@ -77,6 +77,8 @@ final readonly class Client
             (new UnixServer(self::IPC_URI, $loop))
                 ->on('connection', function (ConnectionInterface $workerConnection) use (&$externalConnection) {
                     $workerConnection->on('data', function ($event) use (&$externalConnection) {
+                        echo 'Received: ' . $event . PHP_EOL;
+
                         /** @var ConnectionInterface $connection */
                         $externalConnection->write($event);
                         $externalConnection->end();
