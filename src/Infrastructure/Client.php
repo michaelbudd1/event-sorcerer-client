@@ -34,20 +34,20 @@ final readonly class Client
         private ConnectionInterface|PromiseInterface|null $connection = null
     ) {}
 
-    public function connect(callable $newEventHandler, ?LoopInterface $loop = null): self
+    public function connect(callable $newEventHandler): self
     {
         if (null !== $this->connection) {
             return $this;
         }
 
-        $connection = (new Connector(loop: $loop))
+        $connection = (new Connector())
             ->connect(
                 sprintf(
                     '%s:%d',
                     $this->config->serverHost,
                     $this->config->serverPort
                 )
-            )->then(function (ConnectionInterface $connection) use (&$newEventHandler, $loop) {
+            )->then(function (ConnectionInterface $connection) use (&$newEventHandler) {
                 $connection->on('data', function (string $events) use (&$newEventHandler) {
                     foreach (\array_filter(explode(MessageMarkup::NewEventParser->value, $events)) as $event) {
                         $decodedEvent = self::decodeEvent($event);
@@ -60,6 +60,10 @@ final readonly class Client
                     }
                 });
 
+                Loop::futureTick(function () use ($connection) {
+                    echo 'tick' . PHP_EOL;
+                });
+
                 $connection->write(
                     CreateMessage::forProvidingIdentity(
                         ApplicationId::fromString($this->config->eventSourcererApplicationId),
@@ -67,7 +71,7 @@ final readonly class Client
                     )
                 );
 
-                $this->createIPCServer($connection, $loop);
+//                $this->createIPCServer($connection);
 
                 return $connection;
             });
@@ -163,11 +167,11 @@ final readonly class Client
         }
     }
 
-//    public function acknowledgeEvent(
-//        StreamId $stream,
-//        Checkpoint $streamCheckpoint,
-//        Checkpoint $allStreamCheckpoint
-//    ): void {
+    public function acknowledgeEvent(
+        StreamId $stream,
+        Checkpoint $streamCheckpoint,
+        Checkpoint $allStreamCheckpoint
+    ): void {
 //        $this
 //            ->connection
 //            ?->write(
@@ -178,7 +182,7 @@ final readonly class Client
 //                    $allStreamCheckpoint
 //                )
 //            );
-//    }
+    }
 
     public function writeNewEvent(
         StreamId $streamId,
@@ -244,37 +248,35 @@ final readonly class Client
 //        $this->availableEvents->add($applicationId, $decodedEvent);
 //    }
 
-    private function createIPCServer(ConnectionInterface $externalConnection, ?LoopInterface $loop): void
-    {
-        self::deleteSockFile();
-
-        // Create IPC server for workers
-        $server = new UnixServer(self::IPC_URI, $loop);
-
-        $server->on('connection', function (ConnectionInterface $worker) use ($externalConnection, $loop) {
-            $worker->on('data', function ($data) use ($worker, $externalConnection, $loop) {
-                if ($externalConnection !== null) {
-                    echo 'IPC server just wrote something' . PHP_EOL;
-
-                    $externalConnection->write($data);
-
-                    $loop->futureTick(function () use ($worker) {
-                        echo '[IPC Server] Closing worker connection' . PHP_EOL;
-                        $worker->close();
-                    });
-                } else {
-                    echo 'Warning: External connection not ready yet' . PHP_EOL;
-                }
-
-                /**
-                 * Worker connection must be closed here rather than in calling code, otherwise
-                 * the connection closes before the message has sent
-                 */
-            });
-
-            echo 'Worker connected' . PHP_EOL;
-        });
-    }
+//    private function createIPCServer(ConnectionInterface $externalConnection): void
+//    {
+//        self::deleteSockFile();
+//
+//        // Create IPC server for workers
+//        $server = new UnixServer(self::IPC_URI);
+//
+//        $server->on('connection', function (ConnectionInterface $worker) use ($externalConnection) {
+//            $worker->on('data', function ($data) use ($worker, $externalConnection) {
+//                if ($externalConnection !== null) {
+//                    $externalConnection->write($data);
+//
+////                    $loop->futureTick(function () use ($worker) {
+////                        echo '[IPC Server] Closing worker connection' . PHP_EOL;
+////                        $worker->close();
+////                    });
+//                } else {
+//                    echo 'Warning: External connection not ready yet' . PHP_EOL;
+//                }
+//
+//                /**
+//                 * Worker connection must be closed here rather than in calling code, otherwise
+//                 * the connection closes before the message has sent
+//                 */
+//            });
+//
+//            echo 'Worker connected' . PHP_EOL;
+//        });
+//    }
 
     private static function deleteSockFile(): void
     {
