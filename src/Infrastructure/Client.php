@@ -79,7 +79,6 @@ final readonly class Client
 
                         /** @var ConnectionInterface $connection */
                         $externalConnection->write($event);
-                        $externalConnection->end();
                     });
 
                     echo 'Worker connected!' . PHP_EOL;
