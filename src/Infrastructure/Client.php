@@ -43,17 +43,23 @@ final readonly class Client
                     $this->config->serverPort
                 )
             )->then(function (ConnectionInterface $connection) use ($newEventHandler) {
-                $server = new UnixServer('/tmp/server.sock');
+                $server = new UnixServer(self::IPC_URI);
 
                 $externalConnection = $connection;
 
                 $server->on('connection', function (ConnectionInterface $connection) use (&$externalConnection) {
                     echo 'Unix server running' . PHP_EOL;
 
-                    $connection->on('data', function ($data) use (&$connection, &$externalConnection, &$output) {
+                    $connection->on('data', function ($data) use ($connection, &$externalConnection) {
                         echo 'YES WE RECEIVED THE MESSAGE: ' . $data . PHP_EOL;
-                        $externalConnection->write($data);
-                        $connection->close();
+
+                        if ($externalConnection->write($data)) {
+                            echo 'Yes we were able to write the message via the external connection!';
+
+                            $connection->close();
+                        } else {
+                            echo 'No the buffer is full!' . PHP_EOL;
+                        }
                     });
                 });
 
