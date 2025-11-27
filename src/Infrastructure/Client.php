@@ -43,6 +43,20 @@ final readonly class Client
                     $this->config->serverPort
                 )
             )->then(function (ConnectionInterface $connection) use ($newEventHandler) {
+                $server = new UnixServer('/tmp/server.sock');
+
+                $externalConnection = $connection;
+
+                $server->on('connection', function (ConnectionInterface $connection) use (&$externalConnection) {
+                    echo 'Unix server running' . PHP_EOL;
+
+                    $connection->on('data', function ($data) use (&$connection, &$externalConnection, &$output) {
+                        echo 'YES WE RECEIVED THE MESSAGE: ' . $data . PHP_EOL;
+                        $externalConnection->write($data);
+                        $connection->close();
+                    });
+                });
+
                 $connection->on('data', function (string $events) use ($newEventHandler) {
                     foreach (\array_filter(explode(MessageMarkup::NewEventParser->value, $events)) as $event) {
                         $decodedEvent = self::decodeEvent($event);
