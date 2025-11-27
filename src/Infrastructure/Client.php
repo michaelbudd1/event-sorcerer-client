@@ -43,6 +43,8 @@ final readonly class Client
                     $this->config->serverPort
                 )
             )->then(function (ConnectionInterface $connection) use ($newEventHandler) {
+                self::deleteSockFile();
+
                 $server = new UnixServer(self::IPC_URI);
 
                 $externalConnection = $connection;
