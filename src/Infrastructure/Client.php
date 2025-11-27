@@ -35,7 +35,7 @@ final readonly class Client
             return $this;
         }
 
-        $connection = (new Connector())
+        $externalConnection = (new Connector())
             ->connect(
                 sprintf(
                     '%s:%d',
@@ -44,26 +44,6 @@ final readonly class Client
                 )
             )->then(function (ConnectionInterface $connection) use ($newEventHandler) {
                 self::deleteSockFile();
-
-                $server = new UnixServer(self::IPC_URI);
-
-                $externalConnection = $connection;
-echo 'HERE' . PHP_EOL;
-                $server->on('connection', function (ConnectionInterface $connection) use (&$externalConnection) {
-                    echo 'Unix server running' . PHP_EOL;
-
-                    $connection->on('data', function ($data) use ($connection, &$externalConnection) {
-                        echo 'YES WE RECEIVED THE MESSAGE: ' . $data . PHP_EOL;
-
-                        if ($externalConnection->write($data)) {
-                            echo 'Yes we were able to write the message via the external connection!';
-
-                            $connection->close();
-                        } else {
-                            echo 'No the buffer is full!' . PHP_EOL;
-                        }
-                    });
-                });
 
                 $connection->on('data', function (string $events) use ($newEventHandler) {
                     foreach (\array_filter(explode(MessageMarkup::NewEventParser->value, $events)) as $event) {
@@ -87,11 +67,30 @@ echo 'HERE' . PHP_EOL;
                 return $connection;
             });
 
+        Loop::addTimer(1, function () {});
+
+        $server = new UnixServer(self::IPC_URI);
+
+        echo 'HERE' . PHP_EOL;
+        $server->on('connection', function (ConnectionInterface $connection) use (&$externalConnection) {
+            $connection->on('data', function ($data) use ($connection, &$externalConnection) {
+                echo 'YES WE RECEIVED THE MESSAGE: ' . $data . PHP_EOL;
+//
+//                if ($externalConnection->write($data)) {
+//                    echo 'Yes we were able to write the message via the external connection!';
+//
+//                    $connection->close();
+//                } else {
+//                    echo 'No the buffer is full!' . PHP_EOL;
+//                }
+            });
+        });
+
         return new self(
             $this->config,
 //            $this->availableEvents,
 //            $this->sharedProcessCommunication,
-            $connection
+            $externalConnection
         );
     }
 
