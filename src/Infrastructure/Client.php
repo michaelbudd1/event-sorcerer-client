@@ -48,7 +48,7 @@ final readonly class Client
                 $server = new UnixServer(self::IPC_URI);
 
                 $externalConnection = $connection;
-
+echo 'HERE' . PHP_EOL;
                 $server->on('connection', function (ConnectionInterface $connection) use (&$externalConnection) {
                     echo 'Unix server running' . PHP_EOL;
 
