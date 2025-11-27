@@ -52,10 +52,6 @@ final readonly class Client
                         }
 
                         $newEventHandler($decodedEvent);
-
-                        Loop::addTimer(2, function () {
-                            echo 'did we get that message? ' . PHP_EOL;
-                        });
                     }
                 });
 
