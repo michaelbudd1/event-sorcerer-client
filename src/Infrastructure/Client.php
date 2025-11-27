@@ -43,8 +43,6 @@ final readonly class Client
                     $this->config->serverPort
                 )
             )->then(function (ConnectionInterface $connection) use ($newEventHandler) {
-                self::deleteSockFile();
-
                 $connection->on('data', function (string $events) use ($newEventHandler) {
                     foreach (\array_filter(explode(MessageMarkup::NewEventParser->value, $events)) as $event) {
                         $decodedEvent = self::decodeEvent($event);
@@ -68,6 +66,8 @@ final readonly class Client
             });
 
         Loop::addTimer(1, function () {});
+
+        self::deleteSockFile();
 
         $server = new UnixServer(self::IPC_URI);
 
