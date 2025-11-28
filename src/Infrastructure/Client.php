@@ -43,18 +43,6 @@ final readonly class Client
                     $this->config->serverPort
                 )
             )->then(function (ConnectionInterface $connection) use ($newEventHandler) {
-                self::deleteSockFile();
-
-                $server = new UnixServer(self::IPC_URI);
-
-                $server->on('connection', function (ConnectionInterface $connection) use (&$externalConnection) {
-                    echo $connection->getLocalAddress() . ' has connected!' . PHP_EOL;
-
-                    $connection->on('data', function ($data) use ($connection, &$externalConnection) {
-                        echo 'YES WE RECEIVED THE MESSAGE: ' . $data . PHP_EOL;
-                    });
-                });
-
                 $connection->on('data', function (string $events) use ($newEventHandler) {
                     foreach (\array_filter(explode(MessageMarkup::NewEventParser->value, $events)) as $event) {
                         $decodedEvent = self::decodeEvent($event);
