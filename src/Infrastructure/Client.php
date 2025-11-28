@@ -46,9 +46,8 @@ final readonly class Client
             )->then(function (ConnectionInterface $connection) use ($newEventHandler) {
                 $connection->on('data', function (string $events) use ($newEventHandler, $connection) {
                     foreach (\array_filter(explode(MessageMarkup::NewEventParser->value, $events)) as $event) {
-                        /** @var Event $decodedEvent */
                         $decodedEvent = self::decodeEvent($event);
-
+dd($decodedEvent);
                         if (null === $decodedEvent) {
                             continue;
                         }
