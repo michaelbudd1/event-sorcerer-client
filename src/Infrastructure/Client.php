@@ -27,20 +27,15 @@ final readonly class Client
         private ConnectionInterface|PromiseInterface|null $connection = null
     ) {}
 
-    public function connect(callable $newEventHandler): self
+    public function catchup(callable $newEventHandler): self
     {
         if (null !== $this->connection) {
             return $this;
         }
 
-        $externalConnection = (new Connector())
-            ->connect(
-                sprintf(
-                    '%s:%d',
-                    $this->config->serverHost,
-                    $this->config->serverPort
-                )
-            )->then(function (ConnectionInterface $connection) use ($newEventHandler) {
+        $externalConnection = $this
+            ->createConnection()
+            ->then(function (ConnectionInterface $connection) use ($newEventHandler) {
                 $connection->on('data', function (string $events) use ($newEventHandler, $connection) {
                     foreach (\array_filter(explode(MessageMarkup::NewEventParser->value, $events)) as $event) {
                         $decodedEvent = self::decodeEvent($event);
@@ -50,15 +45,6 @@ final readonly class Client
                         }
 
                         $newEventHandler($decodedEvent);
-
-                        $connection->write(
-                            CreateMessage::forAcknowledgement(
-                                StreamId::fromString($decodedEvent['stream']),
-                                ApplicationId::fromString($this->config->eventSourcererApplicationId),
-                                Checkpoint::fromInt($decodedEvent['number']),
-                                Checkpoint::fromInt($decodedEvent['allSequence'])
-                            )
-                        );
                     }
                 });
 
@@ -78,6 +64,18 @@ final readonly class Client
 //            $this->sharedProcessCommunication,
             $externalConnection
         );
+    }
+
+    public function createConnection(): PromiseInterface
+    {
+        return (new Connector())
+            ->connect(
+                sprintf(
+                    '%s:%d',
+                    $this->config->serverHost,
+                    $this->config->serverPort
+                )
+            );
     }
 
     public function connected(): bool
