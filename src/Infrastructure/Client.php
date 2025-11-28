@@ -52,6 +52,10 @@ final readonly class Client
                         }
 
                         $newEventHandler($decodedEvent);
+
+                        Loop::addTimer(5, function () {
+                            echo 'checking if any acknowledged events!';
+                        });
                     }
                 });
 
@@ -64,8 +68,6 @@ final readonly class Client
 
                 return $connection;
             });
-
-
 
         return new self(
             $this->config,
