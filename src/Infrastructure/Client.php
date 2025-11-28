@@ -65,24 +65,15 @@ final readonly class Client
                 return $connection;
             });
 
-        Loop::addTimer(1, function () {});
-
         self::deleteSockFile();
 
         $server = new UnixServer(self::IPC_URI);
 
-        echo 'HERE' . PHP_EOL;
         $server->on('connection', function (ConnectionInterface $connection) use (&$externalConnection) {
+            echo $connection->getLocalAddress() . ' has connected!' . PHP_EOL;
+
             $connection->on('data', function ($data) use ($connection, &$externalConnection) {
                 echo 'YES WE RECEIVED THE MESSAGE: ' . $data . PHP_EOL;
-//
-//                if ($externalConnection->write($data)) {
-//                    echo 'Yes we were able to write the message via the external connection!';
-//
-//                    $connection->close();
-//                } else {
-//                    echo 'No the buffer is full!' . PHP_EOL;
-//                }
             });
         });
 
