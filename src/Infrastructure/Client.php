@@ -6,6 +6,7 @@ namespace PearTreeWeb\EventSourcerer\Client\Infrastructure;
 
 use PearTreeWebLtd\EventSourcererMessageUtilities\Model\ApplicationId;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Model\Checkpoint;
+use PearTreeWebLtd\EventSourcererMessageUtilities\Model\Event;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Model\EventName;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Model\EventVersion;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Model\MessageMarkup;
@@ -43,8 +44,9 @@ final readonly class Client
                     $this->config->serverPort
                 )
             )->then(function (ConnectionInterface $connection) use ($newEventHandler) {
-                $connection->on('data', function (string $events) use ($newEventHandler) {
+                $connection->on('data', function (string $events) use ($newEventHandler, $connection) {
                     foreach (\array_filter(explode(MessageMarkup::NewEventParser->value, $events)) as $event) {
+                        /** @var Event $decodedEvent */
                         $decodedEvent = self::decodeEvent($event);
 
                         if (null === $decodedEvent) {
@@ -53,9 +55,14 @@ final readonly class Client
 
                         $newEventHandler($decodedEvent);
 
-                        Loop::addTimer(5, function () {
-                            echo 'checking if any acknowledged events!';
-                        });
+                        $connection->write(
+                            CreateMessage::forAcknowledgement(
+                                $decodedEvent->streamId,
+                                ApplicationId::fromString($this->config->eventSourcererApplicationId),
+                                $decodedEvent->catchupStreamCheckpoint,
+                                $decodedEvent->allSequenceCheckpoint
+                            )
+                        );
                     }
                 });
 
