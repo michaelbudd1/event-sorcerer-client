@@ -6,18 +6,15 @@ namespace PearTreeWeb\EventSourcerer\Client\Infrastructure;
 
 use PearTreeWebLtd\EventSourcererMessageUtilities\Model\ApplicationId;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Model\Checkpoint;
-use PearTreeWebLtd\EventSourcererMessageUtilities\Model\Event;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Model\EventName;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Model\EventVersion;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Model\MessageMarkup;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Model\MessageType;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Model\StreamId;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Service\CreateMessage;
-use React\EventLoop\Loop;
 use React\Promise\PromiseInterface;
 use React\Socket\ConnectionInterface;
 use React\Socket\Connector;
-use React\Socket\UnixServer;
 
 final readonly class Client
 {
@@ -47,7 +44,7 @@ final readonly class Client
                 $connection->on('data', function (string $events) use ($newEventHandler, $connection) {
                     foreach (\array_filter(explode(MessageMarkup::NewEventParser->value, $events)) as $event) {
                         $decodedEvent = self::decodeEvent($event);
-dd($decodedEvent);
+
                         if (null === $decodedEvent) {
                             continue;
                         }
@@ -56,10 +53,10 @@ dd($decodedEvent);
 
                         $connection->write(
                             CreateMessage::forAcknowledgement(
-                                $decodedEvent->streamId,
+                                StreamId::fromString($decodedEvent['stream']),
                                 ApplicationId::fromString($this->config->eventSourcererApplicationId),
-                                $decodedEvent->catchupStreamCheckpoint,
-                                $decodedEvent->allSequenceCheckpoint
+                                Checkpoint::fromInt($decodedEvent['catchupRequestStream']),
+                                Checkpoint::fromInt($decodedEvent['allSequence'])
                             )
                         );
                     }
@@ -140,6 +137,18 @@ dd($decodedEvent);
         return ApplicationId::fromString($this->config->eventSourcererApplicationId);
     }
 
+    /**
+     * @return array{
+     *      allSequence: int,
+     *      eventVersion: int,
+     *      name: string,
+     *      number: int,
+     *      payload: array,
+     *      stream: string,
+     *      occurred: string,
+     *      catchupRequestStream: string
+     * }|null
+     */
     private static function decodeEvent(string $event): ?array
     {
         try {
