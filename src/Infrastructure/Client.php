@@ -55,7 +55,7 @@ final readonly class Client
                             CreateMessage::forAcknowledgement(
                                 StreamId::fromString($decodedEvent['stream']),
                                 ApplicationId::fromString($this->config->eventSourcererApplicationId),
-                                Checkpoint::fromInt($decodedEvent['catchupRequestStream']),
+                                Checkpoint::fromInt($decodedEvent['number']),
                                 Checkpoint::fromInt($decodedEvent['allSequence'])
                             )
                         );
