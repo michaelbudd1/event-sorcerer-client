@@ -68,11 +68,17 @@ final readonly class Client
                     }
                 });
 
+                $applicationId = ApplicationId::fromString($this->config->eventSourcererApplicationId);
+
                 $connection->write(
                     CreateMessage::forProvidingIdentity(
                         ApplicationId::fromString($this->config->eventSourcererApplicationId),
                         $this->config->applicationType
                     )
+                );
+
+                $connection->write(
+                    CreateMessage::forCatchupRequest(StreamId::allStream(), $applicationId)
                 );
 
                 return $connection;
