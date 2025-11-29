@@ -46,10 +46,14 @@ final readonly class Client
 
                 $localServer = new UnixServer(self::IPC_URI);
 
-                $localServer->on('data', function ($data) use ($connection) {
-                    var_dump('YES', $data);
+                $localServer->on('connection', function (ConnectionInterface $localConnection) use ($connection) {
+                    echo $localConnection->getLocalAddress() . ' has connected' . PHP_EOL;
 
-                    $connection->write($data);
+                    $localConnection->on('data', function ($data) use ($connection) {
+                        var_dump('YES', $data);
+
+                        $connection->write($data);
+                    });
                 });
 
                 $connection->on('data', function (string $events) use ($newEventHandler) {
