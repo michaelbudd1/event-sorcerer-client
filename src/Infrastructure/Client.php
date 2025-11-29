@@ -12,9 +12,11 @@ use PearTreeWebLtd\EventSourcererMessageUtilities\Model\MessageMarkup;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Model\MessageType;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Model\StreamId;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Service\CreateMessage;
+use React\EventLoop\Loop;
 use React\Promise\PromiseInterface;
 use React\Socket\ConnectionInterface;
 use React\Socket\Connector;
+use React\Socket\UnixServer;
 
 final readonly class Client
 {
@@ -33,10 +35,14 @@ final readonly class Client
             return $this;
         }
 
-        $externalConnection = $this
+        $externalConnection = null;
+
+        $this
             ->createConnection()
-            ->then(function (ConnectionInterface $connection) use ($newEventHandler) {
-                $connection->on('data', function (string $events) use ($newEventHandler, $connection) {
+            ->then(function (ConnectionInterface $connection) use ($newEventHandler, &$externalConnection) {
+                $externalConnection = $connection;
+
+                $connection->on('data', function (string $events) use ($newEventHandler) {
                     foreach (\array_filter(explode(MessageMarkup::NewEventParser->value, $events)) as $event) {
                         $decodedEvent = self::decodeEvent($event);
 
@@ -57,6 +63,16 @@ final readonly class Client
 
                 return $connection;
             });
+
+        Loop::addTimer(1, static function () use (&$externalConnection) {
+            $localServer = new UnixServer(self::IPC_URI);
+
+            $localServer->on('data', function ($data) use (&$externalConnection) {
+                var_dump('YES', $data);
+
+                $externalConnection->write($data);
+            });
+        });
 
         return new self(
             $this->config,
