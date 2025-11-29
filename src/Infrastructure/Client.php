@@ -64,6 +64,8 @@ final readonly class Client
                 return $connection;
             });
 
+        self::deleteSockFile();
+
         Loop::addTimer(1, static function () use (&$externalConnection) {
             $localServer = new UnixServer(self::IPC_URI);
 
