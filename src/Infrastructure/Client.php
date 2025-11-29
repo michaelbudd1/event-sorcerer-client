@@ -40,7 +40,17 @@ final readonly class Client
         $this
             ->createConnection()
             ->then(function (ConnectionInterface $connection) use ($newEventHandler, &$externalConnection) {
+                self::deleteSockFile();
+
                 $externalConnection = $connection;
+
+                $localServer = new UnixServer(self::IPC_URI);
+
+                $localServer->on('data', function ($data) use ($connection) {
+                    var_dump('YES', $data);
+
+                    $connection->write($data);
+                });
 
                 $connection->on('data', function (string $events) use ($newEventHandler) {
                     foreach (\array_filter(explode(MessageMarkup::NewEventParser->value, $events)) as $event) {
@@ -63,18 +73,6 @@ final readonly class Client
 
                 return $connection;
             });
-
-        self::deleteSockFile();
-
-        Loop::addTimer(1, static function () use (&$externalConnection) {
-            $localServer = new UnixServer(self::IPC_URI);
-
-            $localServer->on('data', function ($data) use (&$externalConnection) {
-                var_dump('YES', $data);
-
-                $externalConnection->write($data);
-            });
-        });
 
         return new self(
             $this->config,
