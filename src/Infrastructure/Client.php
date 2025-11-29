@@ -50,7 +50,7 @@ final readonly class Client
                     echo $localConnection->getLocalAddress() . ' has connected' . PHP_EOL;
 
                     $localConnection->on('data', function ($data) use ($connection) {
-                        var_dump('YES', $data);
+                        echo 'We have received a message! ' . $data;
 
                         $connection->write($data);
                     });
