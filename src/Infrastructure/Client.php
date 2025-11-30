@@ -13,6 +13,7 @@ use PearTreeWebLtd\EventSourcererMessageUtilities\Model\MessageType;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Model\StreamId;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Service\CreateMessage;
 use React\EventLoop\Loop;
+use React\EventLoop\LoopInterface;
 use React\Promise\PromiseInterface;
 use React\Socket\ConnectionInterface;
 use React\Socket\Connector;
@@ -37,14 +38,16 @@ final readonly class Client
 
         $externalConnection = null;
 
+        $loop = Loop::get();
+
         $this
-            ->createConnection()
-            ->then(function (ConnectionInterface $connection) use ($newEventHandler, &$externalConnection) {
+            ->createConnection($loop)
+            ->then(function (ConnectionInterface $connection) use ($newEventHandler, &$externalConnection, $loop) {
                 self::deleteSockFile();
 
                 $externalConnection = $connection;
 
-                $localServer = new UnixServer(self::IPC_URI);
+                $localServer = new UnixServer(self::IPC_URI, loop: $loop);
 
                 $localServer->on('connection', function (ConnectionInterface $localConnection) use ($connection) {
                     echo $localConnection->getLocalAddress() . ' has connected' . PHP_EOL;
@@ -92,9 +95,9 @@ final readonly class Client
         );
     }
 
-    public function createConnection(): PromiseInterface
+    public function createConnection(?LoopInterface $loop = null): PromiseInterface
     {
-        return (new Connector())
+        return (new Connector(loop: $loop))
             ->connect(
                 sprintf(
                     '%s:%d',
