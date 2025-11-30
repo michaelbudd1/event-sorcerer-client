@@ -39,8 +39,21 @@ final readonly class Client
 
         $this
             ->createConnection()
-            ->then(function (ConnectionInterface $connection) use ($newEventHandler, &$externalConnection) {
-                $externalConnection = $connection;
+            ->then(function (ConnectionInterface $connection) use ($newEventHandler) {
+                self::deleteSockFile();
+
+                $localServer = new UnixServer(self::IPC_URI);
+
+                $localServer->on('connection', function (ConnectionInterface $localConnection) use ($connection) {
+                    echo $localConnection->getLocalAddress() . ' has connected' . PHP_EOL;
+
+                    $localConnection->on('data', function ($data) use ($connection) {
+                        echo 'We have received a message! ' . $data;
+
+                        $connection->write($data);
+                        $connection->close();
+                    });
+                });
 
                 $connection->on('data', function (string $events) use ($newEventHandler) {
                     foreach (\array_filter(explode(MessageMarkup::NewEventParser->value, $events)) as $event) {
@@ -69,23 +82,6 @@ final readonly class Client
 
                 return $connection;
             });
-
-        Loop::addTimer(2, function () {});
-
-        self::deleteSockFile();
-
-        $localServer = new UnixServer(self::IPC_URI);
-
-        $localServer->on('connection', function (ConnectionInterface $localConnection) use ($externalConnection) {
-            echo $localConnection->getLocalAddress() . ' has connected' . PHP_EOL;
-
-            $localConnection->on('data', function ($data) use ($externalConnection) {
-                echo 'We have received a message! ' . $data;
-
-                $externalConnection->write($data);
-                $externalConnection->close();
-            });
-        });
 
         return new self(
             $this->config,
