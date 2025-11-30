@@ -47,11 +47,11 @@ final readonly class Client
                 $localServer->on('connection', function (ConnectionInterface $localConnection) use ($connection) {
                     echo $localConnection->getLocalAddress() . ' has connected' . PHP_EOL;
 
-                    $localConnection->on('data', function ($data) use ($connection) {
+                    $localConnection->on('data', function ($data) use ($connection, $localConnection) {
                         echo 'We have received a message! ' . $data;
 
                         $connection->write($data);
-                        $connection->close();
+                        $localConnection->close();
                     });
                 });
 
