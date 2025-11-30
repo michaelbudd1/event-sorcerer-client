@@ -12,7 +12,6 @@ use PearTreeWebLtd\EventSourcererMessageUtilities\Model\MessageMarkup;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Model\MessageType;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Model\StreamId;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Service\CreateMessage;
-use React\EventLoop\Loop;
 use React\Promise\PromiseInterface;
 use React\Socket\ConnectionInterface;
 use React\Socket\Connector;
@@ -45,11 +44,7 @@ final readonly class Client
                 $localServer = new UnixServer(self::IPC_URI);
 
                 $localServer->on('connection', function (ConnectionInterface $localConnection) use ($connection) {
-                    echo $localConnection->getLocalAddress() . ' has connected' . PHP_EOL;
-
                     $localConnection->on('data', function ($data) use ($connection, $localConnection) {
-                        echo 'We have received a message! ' . $data;
-
                         $connection->write($data);
                         $localConnection->close();
                     });
