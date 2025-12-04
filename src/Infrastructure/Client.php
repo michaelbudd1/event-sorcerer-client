@@ -151,11 +151,17 @@ final readonly class Client
     {
         self::deleteSockFile();
 
-        return stream_socket_client(
+        $conn = stream_socket_client(
             'unix://' . self::IPC_URI,
             $errno,
             $errst
         );
+
+        if ($errst) {
+            var_dump($errst); die;
+        }
+
+        return $conn;
     }
 
     /**
