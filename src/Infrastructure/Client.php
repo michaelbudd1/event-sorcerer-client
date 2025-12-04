@@ -44,7 +44,7 @@ final readonly class Client
                 $localServer->on('connection', function (ConnectionInterface $localConnection) use ($connection) {
                     $localConnection->on('data', function ($data) use ($connection, $localConnection) {
                         $connection->write($data);
-                        $localConnection->close();
+//                        $localConnection->close();
                     });
                 });
 
