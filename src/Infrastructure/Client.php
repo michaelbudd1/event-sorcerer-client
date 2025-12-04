@@ -144,11 +144,29 @@ final readonly class Client
         }
     }
 
+    /**
+     * @return resource
+     */
+    public function createLocalConnection()
+    {
+        self::deleteSockFile();
+
+        return stream_socket_client(
+            'unix://' . self::IPC_URI,
+            $errno,
+            $errst
+        );
+    }
+
+    /**
+     * @param resource $localConnection
+     */
     public function acknowledgeEvent(
         StreamId $stream,
         StreamId $catchupStreamId,
         Checkpoint $streamCheckpoint,
-        Checkpoint $allStreamCheckpoint
+        Checkpoint $allStreamCheckpoint,
+        $localConnection
     ): void {
         $ackMessage = CreateMessage::forAcknowledgement(
             $stream,
@@ -158,9 +176,7 @@ final readonly class Client
             $allStreamCheckpoint
         );
 
-        $sock = stream_socket_client('unix://' . self::IPC_URI, $errno, $errst);
-        fwrite($sock, $ackMessage->toString());
-        fclose($sock);
+        fwrite($localConnection, $ackMessage->toString());
     }
 
     public function writeNewEvent(
