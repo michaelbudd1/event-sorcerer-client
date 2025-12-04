@@ -146,11 +146,13 @@ final readonly class Client
 
     public function acknowledgeEvent(
         StreamId $stream,
+        StreamId $catchupStreamId,
         Checkpoint $streamCheckpoint,
         Checkpoint $allStreamCheckpoint
     ): void {
         $ackMessage = CreateMessage::forAcknowledgement(
             $stream,
+            $catchupStreamId,
             $this->applicationId(),
             $streamCheckpoint,
             $allStreamCheckpoint
@@ -178,18 +180,6 @@ final readonly class Client
                 )
             );
     }
-//
-//    public function list(string $applicationId): iterable
-//    {
-//        return $this->availableEvents->list(
-//            ApplicationId::fromString($applicationId)
-//        );
-//    }
-//
-//    public function summary(ApplicationId $applicationId): array
-//    {
-//        return $this->availableEvents->summary($applicationId);
-//    }
 
     private static function jsonDecodeErrorMessage(string $parsedEvent): string
     {
@@ -198,62 +188,6 @@ final readonly class Client
             substr($parsedEvent, 0, 50)
         );
     }
-
-//    private function addEventsForProcessing(ApplicationId $applicationId, string $events): void
-//    {
-//        foreach (\array_filter(explode(MessageMarkup::NewEventParser->value, $events)) as $event) {
-//            $decodedEvent = self::decodeEvent($event);
-//
-//            if (null === $decodedEvent) {
-//                continue;
-//            }
-//
-//            $this->addEventToCache($applicationId, $decodedEvent);
-//        }
-//    }
-
-//    private function addEventToCache(ApplicationId $applicationId, array $decodedEvent): void
-//    {
-//        if ($this->availableEvents->count($applicationId) >= 100) {
-//            sleep(10);
-
-//            $this->addEventToCache($applicationId, $decodedEvent);
-
-//            return;
-//        }
-
-//        $this->availableEvents->add($applicationId, $decodedEvent);
-//    }
-
-//    private function createIPCServer(ConnectionInterface $externalConnection): void
-//    {
-//        self::deleteSockFile();
-//
-//        // Create IPC server for workers
-//        $server = new UnixServer(self::IPC_URI);
-//
-//        $server->on('connection', function (ConnectionInterface $worker) use ($externalConnection) {
-//            $worker->on('data', function ($data) use ($worker, $externalConnection) {
-//                if ($externalConnection !== null) {
-//                    $externalConnection->write($data);
-//
-////                    $loop->futureTick(function () use ($worker) {
-////                        echo '[IPC Server] Closing worker connection' . PHP_EOL;
-////                        $worker->close();
-////                    });
-//                } else {
-//                    echo 'Warning: External connection not ready yet' . PHP_EOL;
-//                }
-//
-//                /**
-//                 * Worker connection must be closed here rather than in calling code, otherwise
-//                 * the connection closes before the message has sent
-//                 */
-//            });
-//
-//            echo 'Worker connected' . PHP_EOL;
-//        });
-//    }
 
     private static function deleteSockFile(): void
     {
