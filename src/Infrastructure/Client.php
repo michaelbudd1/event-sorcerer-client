@@ -23,8 +23,6 @@ final readonly class Client
 
     public function __construct(
         private Config $config,
-//        private AvailableEvents $availableEvents,
-//        private SharedProcessCommunication $sharedProcessCommunication,
         private ConnectionInterface|PromiseInterface|null $connection = null
     ) {}
 
@@ -78,12 +76,7 @@ final readonly class Client
                 return $connection;
             });
 
-        return new self(
-            $this->config,
-//            $this->availableEvents,
-//            $this->sharedProcessCommunication,
-            $externalConnection
-        );
+        return new self($this->config, $externalConnection);
     }
 
     public function createConnection(): PromiseInterface
@@ -107,48 +100,6 @@ final readonly class Client
     {
         return $this->connection;
     }
-//
-//    public function availableEventsCount(): int
-//    {
-//        return $this->availableEvents->count(
-//            ApplicationId::fromString($this->config->eventSourcererApplicationId)
-//        );
-//    }
-//
-//    public function hasEventsAvailable(): bool
-//    {
-//        return 0 !== $this->availableEventsCount();
-//    }
-//
-//    public function fetchOneMessage(WorkerId $workerId): ?array
-//    {
-//        return $this->availableEvents->fetchOne(
-//            $workerId,
-//            ApplicationId::fromString($this->config->eventSourcererApplicationId)
-//        );
-//    }
-//
-//    public function attachWorker(WorkerId $workerId): void
-//    {
-//        $this->availableEvents->declareWorker(
-//            $workerId,
-//            ApplicationId::fromString($this->config->eventSourcererApplicationId)
-//        );
-//    }
-//
-//    public function detachWorker(WorkerId $workerId): void
-//    {
-//        $this->availableEvents->detachWorker($workerId);
-//        if ($this->availableEvents->hasNoWorkersRunning()) {
-//        $this->sharedProcessCommunication->clear();
-//        $this->availableEvents->clear(ApplicationId::fromString($this->config->eventSourcererApplicationId));
-//        }
-//    }
-
-//    public function flagCatchupComplete(): void
-//    {
-//        $this->sharedProcessCommunication->flagCatchupIsNotInProgress();
-//    }
 
     public function applicationId(): ApplicationId
     {
@@ -198,16 +149,16 @@ final readonly class Client
         Checkpoint $streamCheckpoint,
         Checkpoint $allStreamCheckpoint
     ): void {
-//        $this
-//            ->connection
-//            ?->write(
-//                CreateMessage::forAcknowledgement(
-//                    $stream,
-//                    ApplicationId::fromString($this->config->eventSourcererApplicationId),
-//                    $streamCheckpoint,
-//                    $allStreamCheckpoint
-//                )
-//            );
+        $ackMessage = CreateMessage::forAcknowledgement(
+            $stream,
+            $this->applicationId(),
+            $streamCheckpoint,
+            $allStreamCheckpoint
+        );
+
+        $sock = stream_socket_client('unix://' . self::IPC_URI, $errno, $errst);
+        fwrite($sock, $ackMessage->toString());
+        fclose($sock);
     }
 
     public function writeNewEvent(
