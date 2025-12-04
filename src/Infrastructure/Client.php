@@ -158,6 +158,8 @@ final readonly class Client
             $allStreamCheckpoint
         );
 
+        self::deleteSockFile();
+
         $sock = stream_socket_client('unix://' . self::IPC_URI, $errno, $errst);
         fwrite($sock, $ackMessage->toString());
         fclose($sock);
