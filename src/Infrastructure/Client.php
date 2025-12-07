@@ -40,11 +40,10 @@ final readonly class Client
                 self::deleteSockFile();
 
                 $localServer = new UnixServer(self::IPC_URI);
-echo 'Local server is running!' . PHP_EOL;
+
                 $localServer->on('connection', function (ConnectionInterface $localConnection) use ($connection) {
                     $localConnection->on('data', function ($data) use ($connection, $localConnection) {
                         $connection->write($data);
-//                        $localConnection->close();
                     });
                 });
 
