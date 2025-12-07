@@ -39,6 +39,19 @@ final readonly class PsrCacheWorkerMessages implements WorkerMessages
         $this->messages->deleteItem(self::cacheKey($workerId));
     }
 
+    public function removeFor(WorkerId $workerId, int $allSequence): void
+    {
+        $messagesCacheItem = $this->messages->getItem(self::cacheKey($workerId));
+
+        $messages = $messagesCacheItem->get() ?? [];
+
+        unset($messages[$allSequence]);
+
+        $messagesCacheItem->set($messages);
+
+        $this->messages->save($messages);
+    }
+
     private static function cacheKey(WorkerId $workerId): string
     {
         return sprintf(

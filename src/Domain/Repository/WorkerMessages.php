@@ -36,5 +36,7 @@ interface WorkerMessages
      */
     public function getFor(WorkerId $workerId): iterable;
 
+    public function removeFor(WorkerId $workerId, int $allSequence): void;
+
     public function clearFor(WorkerId $workerId): void;
 }
