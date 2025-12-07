@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace PearTreeWeb\EventSourcerer\Client\Domain\Repository;
 
+use PearTreeWeb\EventSourcerer\Client\Domain\Model\WorkerId;
+
 interface WorkerMessages
 {
     /**
@@ -18,7 +20,7 @@ interface WorkerMessages
      *  catchupRequestStream: string
      * } $message
      */
-    public function add(array $message): void;
+    public function addFor(WorkerId $workerId, array $message): void;
 
     /**
      * @return iterable<array{
@@ -32,5 +34,5 @@ interface WorkerMessages
      *  catchupRequestStream: string
      * }>
      */
-    public function get(): iterable;
+    public function getFor(WorkerId $workerId): iterable;
 }

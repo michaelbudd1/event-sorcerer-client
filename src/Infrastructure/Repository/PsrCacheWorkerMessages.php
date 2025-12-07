@@ -4,18 +4,19 @@ declare(strict_types=1);
 
 namespace PearTreeWeb\EventSourcerer\Client\Infrastructure\Repository;
 
+use PearTreeWeb\EventSourcerer\Client\Domain\Model\WorkerId;
 use PearTreeWeb\EventSourcerer\Client\Domain\Repository\WorkerMessages;
 use Psr\Cache\CacheItemPoolInterface;
 
 final readonly class PsrCacheWorkerMessages implements WorkerMessages
 {
-    private const string MESSAGES_KEY = 'messages';
+    private const string MESSAGES_KEY_PREFIX = 'messages';
 
     public function __construct(private CacheItemPoolInterface $messages) {}
 
-    public function add(array $message): void
+    public function addFor(WorkerId $workerId, array $message): void
     {
-        $messagesCacheItem = $this->messages->getItem(self::MESSAGES_KEY);
+        $messagesCacheItem = $this->messages->getItem(self::cacheKey($workerId));
 
         $messages = $messagesCacheItem->get() ?? [];
 
@@ -26,10 +27,19 @@ final readonly class PsrCacheWorkerMessages implements WorkerMessages
         $this->messages->save($messagesCacheItem);
     }
 
-    public function get(): iterable
+    public function getFor(WorkerId $workerId): iterable
     {
-        foreach ($this->messages->getItem(self::MESSAGES_KEY)->get() ?? [] as $message) {
+        foreach ($this->messages->getItem(self::cacheKey($workerId))->get() ?? [] as $message) {
             yield $message;
         }
+    }
+
+    private static function cacheKey(WorkerId $workerId): string
+    {
+        return sprintf(
+            '%s-%s',
+            $workerId,
+            self::MESSAGES_KEY_PREFIX
+        );
     }
 }
