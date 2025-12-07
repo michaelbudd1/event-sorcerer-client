@@ -49,7 +49,7 @@ final readonly class PsrCacheWorkerMessages implements WorkerMessages
 
         $messagesCacheItem->set($messages);
 
-        $this->messages->save($messages);
+        $this->messages->save($messagesCacheItem);
     }
 
     private static function cacheKey(WorkerId $workerId): string
