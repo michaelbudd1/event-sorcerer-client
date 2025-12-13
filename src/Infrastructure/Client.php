@@ -11,6 +11,7 @@ use PearTreeWebLtd\EventSourcererMessageUtilities\Model\EventVersion;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Model\MessageMarkup;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Model\MessageType;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Model\StreamId;
+use PearTreeWebLtd\EventSourcererMessageUtilities\Model\WorkerId;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Service\CreateMessage;
 use React\Promise\PromiseInterface;
 use React\Socket\ConnectionInterface;
@@ -26,7 +27,7 @@ final readonly class Client
         private ConnectionInterface|PromiseInterface|null $connection = null
     ) {}
 
-    public function catchup(callable $newEventHandler): self
+    public function catchup(WorkerId $workerId, callable $newEventHandler): self
     {
         if (null !== $this->connection) {
             return $this;
@@ -36,13 +37,13 @@ final readonly class Client
 
         $this
             ->createConnection()
-            ->then(function (ConnectionInterface $connection) use ($newEventHandler) {
+            ->then(function (ConnectionInterface $connection) use ($workerId, $newEventHandler) {
                 self::deleteSockFile();
 
                 $localServer = new UnixServer(self::IPC_URI);
 
                 $localServer->on('connection', function (ConnectionInterface $localConnection) use ($connection) {
-                    $localConnection->on('data', function ($data) use ($connection, $localConnection) {
+                    $localConnection->on('data', function ($data) use ($connection) {
                         $connection->write($data);
                     });
                 });
@@ -69,7 +70,11 @@ final readonly class Client
                 );
 
                 $connection->write(
-                    CreateMessage::forCatchupRequest(StreamId::allStream(), $applicationId)
+                    CreateMessage::forCatchupRequest(
+                        StreamId::allStream(),
+                        $applicationId,
+                        $workerId
+                    )
                 );
 
                 return $connection;
@@ -161,6 +166,7 @@ final readonly class Client
     public function acknowledgeEvent(
         StreamId $stream,
         StreamId $catchupStreamId,
+        WorkerId $workerId,
         Checkpoint $streamCheckpoint,
         Checkpoint $allStreamCheckpoint,
         $localConnection
@@ -169,6 +175,7 @@ final readonly class Client
             $stream,
             $catchupStreamId,
             $this->applicationId(),
+            $workerId,
             $streamCheckpoint,
             $allStreamCheckpoint
         );
