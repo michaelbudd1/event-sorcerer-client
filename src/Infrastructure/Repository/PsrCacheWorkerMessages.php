@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace PearTreeWeb\EventSourcerer\Client\Infrastructure\Repository;
 
-use PearTreeWeb\EventSourcerer\Client\Domain\Model\WorkerId;
 use PearTreeWeb\EventSourcerer\Client\Domain\Repository\WorkerMessages;
+use PearTreeWebLtd\EventSourcererMessageUtilities\Model\WorkerId;
 use Psr\Cache\CacheItemPoolInterface;
 
 final readonly class PsrCacheWorkerMessages implements WorkerMessages
