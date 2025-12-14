@@ -69,6 +69,8 @@ final readonly class Client
                     )
                 );
 
+                sleep(2);
+
                 $connection->write(
                     CreateMessage::forCatchupRequest(
                         StreamId::allStream(),
