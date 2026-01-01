@@ -51,7 +51,7 @@ final readonly class Client
                 $connection->on('data', function (string $events) use ($newEventHandler) {
                     foreach (\array_filter(explode(MessageMarkup::NewEventParser->value, $events)) as $event) {
                         $decodedEvent = self::decodeEvent($event);
-
+var_dump($decodedEvent); die;
                         if (null === $decodedEvent) {
                             continue;
                         }
