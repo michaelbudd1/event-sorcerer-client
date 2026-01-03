@@ -65,7 +65,8 @@ final readonly class Client
                 $connection->write(
                     CreateMessage::forProvidingIdentity(
                         ApplicationId::fromString($this->config->eventSourcererApplicationId),
-                        $this->config->applicationType
+                        $this->config->applicationType,
+                        $workerId
                     )
                 );
 
