@@ -156,6 +156,8 @@ final readonly class Client
      */
     public function createLocalConnection()
     {
+        self::deleteSockFile();
+
         return stream_socket_client(
             'unix://' . self::IPC_URI,
             $errorCode,
