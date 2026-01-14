@@ -184,6 +184,7 @@ final readonly class Client
         );
 
         fwrite($localConnection, $ackMessage->toString());
+        fflush($localConnection);
     }
 
     public function writeNewEvent(
