@@ -35,6 +35,8 @@ final readonly class Client
 
         $externalConnection = null;
 
+        echo 'how many times connecting???' . PHP_EOL;
+
         $this
             ->createConnection()
             ->then(function (ConnectionInterface $connection) use ($workerId, $newEventHandler) {
