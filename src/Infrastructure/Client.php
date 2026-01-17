@@ -46,6 +46,10 @@ final readonly class Client
                     $localConnection->on('data', function ($data) use ($connection) {
                         $connection->write($data);
                     });
+
+                    $localConnection->on('disconnect', function () {
+                        var_dump('disconnected'); die;
+                    });
                 });
 
                 $connection->on('data', function (string $events) use ($newEventHandler) {
@@ -156,8 +160,6 @@ final readonly class Client
      */
     public function createLocalConnection()
     {
-        self::deleteSockFile();
-
         return stream_socket_client('unix://' . self::IPC_URI);
     }
 
