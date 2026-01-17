@@ -35,8 +35,6 @@ final readonly class Client
 
         $externalConnection = null;
 
-        echo 'how many times connecting???' . PHP_EOL;
-
         $this
             ->createConnection()
             ->then(function (ConnectionInterface $connection) use ($workerId, $newEventHandler) {
@@ -158,11 +156,9 @@ final readonly class Client
      */
     public function createLocalConnection()
     {
-        return stream_socket_client(
-            'unix://' . self::IPC_URI,
-            $errorCode,
-            $errorMessage
-        );
+        self::deleteSockFile();
+
+        return stream_socket_client('unix://' . self::IPC_URI);
     }
 
     /**
