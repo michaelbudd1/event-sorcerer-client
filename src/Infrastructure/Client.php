@@ -67,6 +67,8 @@ final readonly class Client
                     foreach (\array_filter(explode(MessageMarkup::NewEventParser->value, $events)) as $event) {
                         $decodedEvent = self::decodeEvent($event);
 
+                        echo 'received ' . $decodedEvent . PHP_EOL;
+
                         if (null === $decodedEvent) {
                             continue;
                         }
