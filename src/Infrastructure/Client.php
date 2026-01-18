@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace PearTreeWeb\EventSourcerer\Client\Infrastructure;
 
+use PearTreeWeb\EventSourcerer\Client\Exception\CouldNotEstablishLocalConnection;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Model\ApplicationId;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Model\Checkpoint;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Model\EventName;
@@ -160,7 +161,13 @@ final readonly class Client
      */
     public function createLocalConnection()
     {
-        return stream_socket_client('unix://' . self::IPC_URI);
+        $connection = stream_socket_client('unix://' . self::IPC_URI, $errorCode, $errorMessage);
+
+        if (false === $connection) {
+            throw CouldNotEstablishLocalConnection::because($errorMessage);
+        }
+
+        return $connection;
     }
 
     /**
