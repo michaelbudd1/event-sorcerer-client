@@ -161,9 +161,13 @@ final readonly class Client
      */
     public function createLocalConnection()
     {
-        $connection = stream_socket_client('unix://' . self::IPC_URI, $errorCode, $errorMessage);
+        try {
+            $connection = stream_socket_client('unix://' . self::IPC_URI, $errorCode, $errorMessage);
 
-        if (false === $connection) {
+            if (false === $connection) {
+                throw CouldNotEstablishLocalConnection::because($errorMessage);
+            }
+        } catch (\Throwable) {
             throw CouldNotEstablishLocalConnection::because($errorMessage);
         }
 
