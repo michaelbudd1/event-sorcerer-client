@@ -168,7 +168,7 @@ final readonly class Client
                 throw CouldNotEstablishLocalConnection::because($errorMessage);
             }
         } catch (\Throwable) {
-            throw CouldNotEstablishLocalConnection::because($errorMessage);
+            throw CouldNotEstablishLocalConnection::because($errorMessage, $errorCode);
         }
 
         return $connection;
