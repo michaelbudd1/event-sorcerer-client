@@ -44,7 +44,7 @@ final readonly class Client
 
                 $localServer = new UnixServer(self::IPC_URI);
                 $logAction = $logAction ?? self::nullLogActionHandler();
-$logAction(ConnectionUpdate::ConnectionErrored, 'cheese');
+
                 $localServer->on('connection', function (ConnectionInterface $localConnection) use ($connection, $logAction) {
                     $localConnection->on('data', function ($data) use ($connection) {
                         $connection->write($data);
