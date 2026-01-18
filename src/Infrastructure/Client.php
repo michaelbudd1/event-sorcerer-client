@@ -44,6 +44,27 @@ final readonly class Client
 
                 $externalConnection = $connection;
 
+                $localServer = new UnixServer(self::IPC_URI);
+                $logAction = $logAction ?? self::nullLogActionHandler();
+
+                $localServer->on('connection', function (ConnectionInterface $localConnection) use ($connection, $logAction) {
+                    $localConnection->on('data', function ($data) use ($connection) {
+                        $connection->write($data);
+                    });
+
+                    $localConnection->on('error', function (\Exception $e) use ($logAction) {
+                        $logAction(ConnectionUpdate::ConnectionErrored, $e->getMessage());
+                    });
+
+                    $localConnection->on('close', function () use ($logAction) {
+                        $logAction(ConnectionUpdate::ConnectionClosed);
+                    });
+
+                    $localConnection->on('end', function () use ($logAction) {
+                        $logAction(ConnectionUpdate::ConnectionEnded);
+                    });
+                });
+
                 $connection->on('data', function (string $events) use ($newEventHandler) {
                     foreach (\array_filter(explode(MessageMarkup::NewEventParser->value, $events)) as $event) {
                         $decodedEvent = self::decodeEvent($event);
@@ -90,29 +111,6 @@ final readonly class Client
 
                 return $connection;
             });
-
-        sleep(2);
-
-        $localServer = new UnixServer(self::IPC_URI);
-        $logAction = $logAction ?? self::nullLogActionHandler();
-
-        $localServer->on('connection', function (ConnectionInterface $localConnection) use ($externalConnection, $logAction) {
-            $localConnection->on('data', function ($data) use ($externalConnection) {
-                $externalConnection->write($data);
-            });
-
-            $localConnection->on('error', function (\Exception $e) use ($logAction) {
-                $logAction(ConnectionUpdate::ConnectionErrored, $e->getMessage());
-            });
-
-            $localConnection->on('close', function () use ($logAction) {
-                $logAction(ConnectionUpdate::ConnectionClosed);
-            });
-
-            $localConnection->on('end', function () use ($logAction) {
-                $logAction(ConnectionUpdate::ConnectionEnded);
-            });
-        });
 
         return new self($this->config, $externalConnection);
     }
