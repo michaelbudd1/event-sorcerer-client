@@ -28,7 +28,7 @@ final readonly class Client
         private ConnectionInterface|PromiseInterface|null $connection = null
     ) {}
 
-    public function catchup(WorkerId $workerId, callable $newEventHandler): self
+    public function catchup(WorkerId $workerId, callable $newEventHandler, callable $logAction = null): self
     {
         if (null !== $this->connection) {
             return $this;
@@ -38,22 +38,27 @@ final readonly class Client
 
         $this
             ->createConnection()
-            ->then(function (ConnectionInterface $connection) use ($workerId, $newEventHandler) {
+            ->then(function (ConnectionInterface $connection) use ($workerId, $newEventHandler, $logAction) {
                 self::deleteSockFile();
 
                 $localServer = new UnixServer(self::IPC_URI);
+                $logAction = $logAction ?? self::nullLogActionHandler();
 
-                $localServer->on('connection', function (ConnectionInterface $localConnection) use ($connection) {
+                $localServer->on('connection', function (ConnectionInterface $localConnection) use ($connection, $logAction) {
                     $localConnection->on('data', function ($data) use ($connection) {
                         $connection->write($data);
                     });
 
-                    $localConnection->on('error', function (\Exception $e) {
-                        var_dump($e); die;
+                    $localConnection->on('error', function (\Exception $e) use ($logAction) {
+                        $logAction(ConnectionUpdate::ConnectionErrored, $e->getMessage());
                     });
 
-                    $localConnection->on('close', function () {
-                        var_dump('yes Ive close :-('); die;
+                    $localConnection->on('close', function () use ($logAction) {
+                        $logAction(ConnectionUpdate::ConnectionClosed);
+                    });
+
+                    $localConnection->on('end', function () use ($logAction) {
+                        $logAction(ConnectionUpdate::ConnectionEnded);
                     });
                 });
 
@@ -233,5 +238,16 @@ final readonly class Client
         if (file_exists(self::IPC_URI)) {
             unlink(self::IPC_URI);
         }
+    }
+
+    private static function nullLogActionHandler(): callable
+    {
+        return static function (ConnectionUpdate $update, ?string $message = null) {
+            echo sprintf(
+                'Connection update: %s %s',
+                $update->name,
+                $message ?? '',
+            ) . PHP_EOL;
+        };
     }
 }
