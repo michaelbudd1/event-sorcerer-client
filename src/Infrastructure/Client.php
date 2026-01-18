@@ -48,8 +48,12 @@ final readonly class Client
                         $connection->write($data);
                     });
 
-                    $localConnection->on('disconnect', function () {
-                        var_dump('disconnected'); die;
+                    $localConnection->on('error', function (\Exception $e) {
+                        var_dump($e); die;
+                    });
+
+                    $localConnection->on('close', function () {
+                        var_dump('yes Ive close :-('); die;
                     });
                 });
 
@@ -165,7 +169,7 @@ final readonly class Client
             $connection = stream_socket_client('unix://' . self::IPC_URI, $errorCode, $errorMessage);
 
             if (false === $connection) {
-                throw CouldNotEstablishLocalConnection::because($errorMessage);
+                throw CouldNotEstablishLocalConnection::because($errorMessage, $errorCode);
             }
         } catch (\Throwable) {
             throw CouldNotEstablishLocalConnection::because($errorMessage, $errorCode);
