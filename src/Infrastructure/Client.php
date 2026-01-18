@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace PearTreeWeb\EventSourcerer\Client\Infrastructure;
 
 use PearTreeWeb\EventSourcerer\Client\Exception\CouldNotEstablishLocalConnection;
+use PearTreeWeb\EventSourcerer\Client\Infrastructure\Exception\MasterConnectionBroken;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Model\ApplicationId;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Model\Checkpoint;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Model\EventName;
@@ -72,6 +73,18 @@ final readonly class Client
 
                         $newEventHandler($decodedEvent);
                     }
+                });
+
+                $connection->on('error', function (\Exception $e) {
+                    throw MasterConnectionBroken::becauseOfAnError($e->getMessage());
+                });
+
+                $connection->on('close', function () {
+                    throw MasterConnectionBroken::becauseItClosed();
+                });
+
+                $connection->on('end', function () {
+                    throw MasterConnectionBroken::becauseItEnded();
                 });
 
                 $applicationId = ApplicationId::fromString($this->config->eventSourcererApplicationId);
