@@ -156,7 +156,7 @@ final readonly class Client
      */
     private static function decodeEvent(string $event): ?array
     {
-//        try {
+        try {
             $regex = sprintf('/%s {.+}/', MessageType::NewEvent->value);
 
             preg_match($regex, $event, $matches);
@@ -173,11 +173,11 @@ final readonly class Client
                 512,
                 JSON_THROW_ON_ERROR
             );
-//        } catch (\JsonException) {
-//            echo self::jsonDecodeErrorMessage($event);
-//
-//            return null;
-//        }
+        } catch (\JsonException) {
+            echo self::jsonDecodeErrorMessage($event);
+
+            return null;
+        }
     }
 
     /**
