@@ -65,13 +65,26 @@ final readonly class Client
                     });
                 });
 
-                $connection->on('data', function (string $events) use ($newEventHandler) {
-                    foreach (\array_filter(explode(MessageMarkup::NewEventParser->value, $events)) as $event) {
+                // Buffer for incomplete events
+                $buffer = '';
+
+                $connection->on('data', function (string $data) use ($newEventHandler, &$buffer) {
+                    // Append new data to buffer
+                    $buffer .= $data;
+
+                    // Split on delimiter
+                    $parts = explode(MessageMarkup::NewEventParser->value, $buffer);
+
+                    // Keep the last part as it might be incomplete
+                    $buffer = array_pop($parts);
+
+                    // Process complete events
+                    foreach (array_filter($parts) as $event) {
                         $decodedEvent = self::decodeEvent($event);
 
-                        if (null === $decodedEvent) {
-                            continue;
-                        }
+//                        if (null === $decodedEvent) {
+//                            continue;
+//                        }
 
                         $newEventHandler($decodedEvent);
                     }
@@ -156,14 +169,14 @@ final readonly class Client
      */
     private static function decodeEvent(string $event): ?array
     {
-        try {
+//        try {
             $regex = sprintf('/%s {.+}/', MessageType::NewEvent->value);
 
             preg_match($regex, $event, $matches);
 
-            if (!isset($matches[0])) {
-                return null;
-            }
+//            if (!isset($matches[0])) {
+//                return null;
+//            }
 
             return json_decode(
                 trim(
@@ -173,11 +186,11 @@ final readonly class Client
                 512,
                 JSON_THROW_ON_ERROR
             );
-        } catch (\JsonException) {
-            echo self::jsonDecodeErrorMessage($event);
-
-            return null;
-        }
+//        } catch (\JsonException) {
+//            echo self::jsonDecodeErrorMessage($event);
+//
+//            return null;
+//        }
     }
 
     /**
