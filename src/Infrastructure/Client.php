@@ -228,7 +228,7 @@ final readonly class Client
                 // Buffer for incomplete events
                 $buffer = '';
 
-                $connection->on('data', function (string $data) use (&$buffer) {
+                $connection->on('data', function (string $data) use (&$buffer, &$events, $connection) {
                     $buffer .= $data;
 
                     $parts = explode(MessageMarkup::NewEventParser->value, $buffer);
@@ -236,8 +236,20 @@ final readonly class Client
                     // Keep the last part as it might be incomplete
                     $buffer = array_pop($parts);
 
+                    $i = 0;
+
                     foreach (array_filter($parts) as $event) {
+                        $i++;
+
                         $events[] = self::decodeEvent($event);
+
+                        if (10 === $i) {
+                            $connection->close();
+
+                            break;
+                        }
+
+                        // @todo if this is the last event then close the connection!!!
                     }
                 });
 
@@ -252,7 +264,7 @@ final readonly class Client
                 sleep(2);
 
                 $connection->write(
-                    CreateMessage::forCatchupRequest($streamId, $applicationId, $workerId)
+                    CreateMessage::forCatchupRequest($streamId, $applicationId, $workerId, Checkpoint::zero())
                 );
 
                 return $connection;
