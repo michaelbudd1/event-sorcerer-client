@@ -220,9 +220,11 @@ final readonly class Client
     {
         $workerId = WorkerId::fromString('stream-reader');
 
-        yield from $this
+        $events = [];
+
+        $this
             ->createConnection()
-            ->then(function (ConnectionInterface $connection) use ($streamId, $workerId) {
+            ->then(function (ConnectionInterface $connection) use ($streamId, $workerId, &$events) {
                 // Buffer for incomplete events
                 $buffer = '';
 
@@ -235,7 +237,7 @@ final readonly class Client
                     $buffer = array_pop($parts);
 
                     foreach (array_filter($parts) as $event) {
-                        yield self::decodeEvent($event);
+                        $events[] = self::decodeEvent($event);
                     }
                 });
 
@@ -255,6 +257,8 @@ final readonly class Client
 
                 return $connection;
             });
+
+        yield from $events;
     }
 
     private static function deleteSockFile(): void
