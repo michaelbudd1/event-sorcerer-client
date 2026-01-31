@@ -81,36 +81,18 @@ final readonly class Client
                     }
                 });
 
-                $connection->on('error', function (\Exception $e) {
-                    throw MasterConnectionBroken::becauseOfAnError($e->getMessage());
-                });
-
-                $connection->on('close', function () {
-                    throw MasterConnectionBroken::becauseItClosed();
-                });
-
-                $connection->on('end', function () {
-                    throw MasterConnectionBroken::becauseItEnded();
-                });
+                $this->handleConnectionErrors($connection);
 
                 $applicationId = ApplicationId::fromString($this->config->eventSourcererApplicationId);
 
                 $connection->write(
-                    CreateMessage::forProvidingIdentity(
-                        ApplicationId::fromString($this->config->eventSourcererApplicationId),
-                        $this->config->applicationType,
-                        $workerId
-                    )
+                    CreateMessage::forProvidingIdentity($applicationId, $this->config->applicationType, $workerId)
                 );
 
                 sleep(2);
 
                 $connection->write(
-                    CreateMessage::forCatchupRequest(
-                        StreamId::allStream(),
-                        $applicationId,
-                        $workerId
-                    )
+                    CreateMessage::forCatchupRequest(StreamId::allStream(), $applicationId, $workerId)
                 );
 
                 return $connection;
@@ -234,6 +216,47 @@ final readonly class Client
             );
     }
 
+    public function readStream(StreamId $streamId): iterable
+    {
+        $workerId = WorkerId::fromString('stream-reader');
+
+        yield from $this
+            ->createConnection()
+            ->then(function (ConnectionInterface $connection) use ($streamId, $workerId) {
+                // Buffer for incomplete events
+                $buffer = '';
+
+                $connection->on('data', function (string $data) use (&$buffer) {
+                    $buffer .= $data;
+
+                    $parts = explode(MessageMarkup::NewEventParser->value, $buffer);
+
+                    // Keep the last part as it might be incomplete
+                    $buffer = array_pop($parts);
+
+                    foreach (array_filter($parts) as $event) {
+                        yield self::decodeEvent($event);
+                    }
+                });
+
+                $this->handleConnectionErrors($connection);
+
+                $applicationId = ApplicationId::fromString($this->config->eventSourcererApplicationId);
+
+                $connection->write(
+                    CreateMessage::forProvidingIdentity($applicationId, $this->config->applicationType, $workerId)
+                );
+
+                sleep(2);
+
+                $connection->write(
+                    CreateMessage::forCatchupRequest($streamId, $applicationId, $workerId)
+                );
+
+                return $connection;
+            });
+    }
+
     private static function deleteSockFile(): void
     {
         if (file_exists(self::IPC_URI)) {
@@ -250,5 +273,20 @@ final readonly class Client
                 $message ?? '',
             ) . PHP_EOL;
         };
+    }
+
+    private function handleConnectionErrors(ConnectionInterface $connection): void
+    {
+        $connection->on('error', function (\Exception $e) {
+            throw MasterConnectionBroken::becauseOfAnError($e->getMessage());
+        });
+
+        $connection->on('close', function () {
+            throw MasterConnectionBroken::becauseItClosed();
+        });
+
+        $connection->on('end', function () {
+            throw MasterConnectionBroken::becauseItEnded();
+        });
     }
 }
