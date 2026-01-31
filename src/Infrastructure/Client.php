@@ -69,24 +69,15 @@ final readonly class Client
                 $buffer = '';
 
                 $connection->on('data', function (string $data) use ($newEventHandler, &$buffer) {
-                    // Append new data to buffer
                     $buffer .= $data;
 
-                    // Split on delimiter
                     $parts = explode(MessageMarkup::NewEventParser->value, $buffer);
 
                     // Keep the last part as it might be incomplete
                     $buffer = array_pop($parts);
 
-                    // Process complete events
                     foreach (array_filter($parts) as $event) {
-                        $decodedEvent = self::decodeEvent($event);
-
-//                        if (null === $decodedEvent) {
-//                            continue;
-//                        }
-
-                        $newEventHandler($decodedEvent);
+                        $newEventHandler(self::decodeEvent($event));
                     }
                 });
 
@@ -169,28 +160,18 @@ final readonly class Client
      */
     private static function decodeEvent(string $event): ?array
     {
-//        try {
-            $regex = sprintf('/%s {.+}/', MessageType::NewEvent->value);
+        $regex = sprintf('/%s {.+}/', MessageType::NewEvent->value);
 
-            preg_match($regex, $event, $matches);
+        preg_match($regex, $event, $matches);
 
-//            if (!isset($matches[0])) {
-//                return null;
-//            }
-
-            return json_decode(
-                trim(
-                    str_replace(MessageType::NewEvent->value, '', $matches[0])
-                ),
-                true,
-                512,
-                JSON_THROW_ON_ERROR
-            );
-//        } catch (\JsonException) {
-//            echo self::jsonDecodeErrorMessage($event);
-//
-//            return null;
-//        }
+        return json_decode(
+            trim(
+                str_replace(MessageType::NewEvent->value, '', $matches[0])
+            ),
+            true,
+            512,
+            JSON_THROW_ON_ERROR
+        );
     }
 
     /**
@@ -251,14 +232,6 @@ final readonly class Client
                     $payload
                 )
             );
-    }
-
-    private static function jsonDecodeErrorMessage(string $parsedEvent): string
-    {
-        return sprintf(
-            'An error occurred attempting to decode message: %s',
-            substr($parsedEvent, 0, 50)
-        );
     }
 
     private static function deleteSockFile(): void
