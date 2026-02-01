@@ -19,6 +19,7 @@ use React\Promise\PromiseInterface;
 use React\Socket\ConnectionInterface;
 use React\Socket\Connector;
 use React\Socket\UnixServer;
+use function React\Async\await;
 
 final readonly class Client
 {
@@ -222,7 +223,8 @@ final readonly class Client
 
         $events = [];
 
-        $this
+        await(
+            $this
             ->createConnection()
             ->then(function (ConnectionInterface $connection) use ($streamId, $workerId, &$events) {
                 // Buffer for incomplete events
@@ -265,7 +267,8 @@ final readonly class Client
                 );
 
                 return $connection;
-            });
+            })
+        );
 
         yield from $events;
     }
