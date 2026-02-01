@@ -230,7 +230,7 @@ final readonly class Client
                 // Buffer for incomplete events
                 $buffer = '';
 
-                $connection->on('data', function (string $data) use (&$buffer, &$events) {
+                $connection->on('data', function (string $data) use (&$buffer, &$events, &$connection) {
                     $buffer .= $data;
 
                     $parts = explode(MessageMarkup::NewEventParser->value, $buffer);
@@ -245,11 +245,11 @@ final readonly class Client
 
                         $events[] = self::decodeEvent($event);
 
-//                        if (10 === $i) {
-//                            $connection->close();
-//
-//                            break;
-//                        }
+                        if (10 === $i) {
+                            $connection->close();
+
+                            break;
+                        }
 
                         // @todo if this is the last event then close the connection!!!
                     }
