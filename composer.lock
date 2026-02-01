@@ -59,12 +59,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/michaelbudd1/event-sourcerer-message-utilities.git",
-                "reference": "b44a4f24a9d0e557c3d6e276da9eeaed70e300af"
+                "reference": "2c35809b8cc821f79f9026d45fd19b4b6c4cb220"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/michaelbudd1/event-sourcerer-message-utilities/zipball/b44a4f24a9d0e557c3d6e276da9eeaed70e300af",
-                "reference": "b44a4f24a9d0e557c3d6e276da9eeaed70e300af",
+                "url": "https://api.github.com/repos/michaelbudd1/event-sourcerer-message-utilities/zipball/2c35809b8cc821f79f9026d45fd19b4b6c4cb220",
+                "reference": "2c35809b8cc821f79f9026d45fd19b4b6c4cb220",
                 "shasum": ""
             },
             "require": {
@@ -89,7 +89,7 @@
                 "issues": "https://github.com/michaelbudd1/event-sourcerer-message-utilities/issues",
                 "source": "https://github.com/michaelbudd1/event-sourcerer-message-utilities/tree/main"
             },
-            "time": "2026-01-14T19:43:51+00:00"
+            "time": "2026-02-01T07:15:39+00:00"
         },
         {
             "name": "illuminate/collections",
@@ -3842,5 +3842,5 @@
     "prefer-lowest": false,
     "platform": {},
     "platform-dev": {},
-    "plugin-api-version": "2.9.0"
+    "plugin-api-version": "2.6.0"
 }
