@@ -230,8 +230,8 @@ final readonly class Client
                 // Buffer for incomplete events
                 $buffer = '';
 
-                $connection->on('data', function (string $data) use (&$buffer, &$events, $connection) {
-                    dd($events);
+                $connection->on('data', function (string $data) use (&$buffer, &$events) {
+                    dd($data);
 //                    $buffer .= $data;
 //
 //                    $parts = explode(MessageMarkup::NewEventParser->value, $buffer);
@@ -257,7 +257,6 @@ final readonly class Client
                 });
 
                 $this->handleConnectionErrors($connection);
-
 
                 $applicationId = ApplicationId::fromString($this->config->eventSourcererApplicationId);
                 $connection->write(CreateMessage::forReadingStream($streamId, $applicationId));
