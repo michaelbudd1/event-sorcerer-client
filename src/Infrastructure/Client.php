@@ -229,7 +229,7 @@ final readonly class Client
             ->then(function (ConnectionInterface $connection) use ($streamId, $workerId, &$events) {
                 // Buffer for incomplete events
                 $buffer = '';
-dd('connected');
+
                 $connection->on('data', function (string $data) use (&$buffer, &$events, $connection) {
                     dd($events);
 //                    $buffer .= $data;
@@ -258,14 +258,10 @@ dd('connected');
 
                 $this->handleConnectionErrors($connection);
 
+
                 $applicationId = ApplicationId::fromString($this->config->eventSourcererApplicationId);
-
-                sleep(2);
-
-                $connection->write(
-                    CreateMessage::forReadingStream($streamId, $applicationId)
-                );
-
+                $connection->write(CreateMessage::forReadingStream($streamId, $applicationId));
+dd('sent message!');
                 return $connection;
             })
         );
