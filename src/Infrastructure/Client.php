@@ -229,7 +229,7 @@ final readonly class Client
             ->then(function (ConnectionInterface $connection) use ($streamId, $workerId, &$events) {
                 // Buffer for incomplete events
                 $buffer = '';
-
+dd('connected');
                 $connection->on('data', function (string $data) use (&$buffer, &$events, $connection) {
                     dd($events);
 //                    $buffer .= $data;
