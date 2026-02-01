@@ -261,8 +261,6 @@ final readonly class Client
 
                 $applicationId = ApplicationId::fromString($this->config->eventSourcererApplicationId);
                 $connection->write(CreateMessage::forReadingStream($streamId, $applicationId));
-dd('sent message!', CreateMessage::forReadingStream($streamId, $applicationId));
-                return $connection;
             })
         );
 
