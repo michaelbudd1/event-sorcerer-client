@@ -231,29 +231,28 @@ final readonly class Client
                 $buffer = '';
 
                 $connection->on('data', function (string $data) use (&$buffer, &$events) {
-                    dd($data);
-//                    $buffer .= $data;
-//
-//                    $parts = explode(MessageMarkup::NewEventParser->value, $buffer);
-//
-//                    // Keep the last part as it might be incomplete
-//                    $buffer = array_pop($parts);
-//
-//                    $i = 0;
-//
-//                    foreach (array_filter($parts) as $event) {
-//                        $i++;
-//dd($event);
-//                        $events[] = self::decodeEvent($event);
-//
+                    $buffer .= $data;
+
+                    $parts = explode(MessageMarkup::NewEventParser->value, $buffer);
+
+                    // Keep the last part as it might be incomplete
+                    $buffer = array_pop($parts);
+
+                    $i = 0;
+
+                    foreach (array_filter($parts) as $event) {
+                        $i++;
+
+                        $events[] = self::decodeEvent($event);
+
 //                        if (10 === $i) {
 //                            $connection->close();
 //
 //                            break;
 //                        }
-//
-//                        // @todo if this is the last event then close the connection!!!
-//                    }
+
+                        // @todo if this is the last event then close the connection!!!
+                    }
                 });
 
                 $this->handleConnectionErrors($connection);
