@@ -35,13 +35,13 @@ final readonly class Client
             return $this;
         }
 
-        self::deleteSockFile();
-
         $externalConnection = null;
 
         $this
             ->createConnection()
             ->then(function (ConnectionInterface $connection) use ($workerId, $newEventHandler, $logAction, &$externalConnection) {
+                self::deleteSockFile();
+
                 $externalConnection = $connection;
 
                 $localServer = new UnixServer(self::IPC_URI);
@@ -240,7 +240,7 @@ final readonly class Client
 
                     foreach (array_filter($parts) as $event) {
                         $i++;
-
+dd($event);
                         $events[] = self::decodeEvent($event);
 
                         if (10 === $i) {
