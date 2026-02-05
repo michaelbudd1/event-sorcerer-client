@@ -26,8 +26,8 @@ final readonly class InstantiateEventFromArray
     {
         $return = [];
 
-        foreach ($properties as $property) {
-            $return[$property['name']] = $property['serializedValue'];
+        foreach ($properties as $property => $propertyValue) {
+            $return[$property] = $propertyValue;
         }
 
         return $return;

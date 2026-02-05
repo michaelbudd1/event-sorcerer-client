@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace PearTreeWeb\EventSourcerer\Client\Infrastructure\Repository;
 
 use PearTreeWeb\EventSourcerer\Client\Domain\Model\Stream;
-use PearTreeWeb\EventSourcerer\Client\Domain\Model\StreamName;
 use PearTreeWeb\EventSourcerer\Client\Domain\Repository\StreamRepository;
 use PearTreeWeb\EventSourcerer\Client\Exception\CouldNotStoreEventException;
 use PearTreeWeb\EventSourcerer\Client\Infrastructure\Config;
@@ -23,16 +22,15 @@ final readonly class HttpStreamRepository implements StreamRepository
         private Config $config
     ) {}
 
-    public function get(StreamName $name, StreamId $id, Checkpoint $checkpoint): Stream
+    public function get(StreamId $id, Checkpoint $checkpoint): iterable
     {
-        $response = $this->httpClient->request('GET', $this->url($id));
-        $events   = json_decode($response->getContent(), true, 512, JSON_THROW_ON_ERROR);
+        $response = $this->httpClient->request(
+            'GET',
+            $this->url($id),
+            ['query' => ['streamId' => $id->toString()]],
+        );
 
-        foreach ($events as &$event) {
-            $event['properties'] = self::keyPropertiesByName($event['properties']);
-        }
-
-        return new Stream($id, $name, $events);
+        yield from json_decode($response->getContent(), true, 512, JSON_THROW_ON_ERROR);
     }
 
     public function save(Stream $aggregate): void
@@ -89,9 +87,8 @@ final readonly class HttpStreamRepository implements StreamRepository
             : '';
 
         return sprintf(
-            '%s:%s/api/stream_events%s',
+            '%s/api/stream_events%s',
             $this->config->serverUrl,
-            $this->config->serverPort,
             $appendId
         );
     }

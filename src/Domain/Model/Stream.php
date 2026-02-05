@@ -8,6 +8,9 @@ use PearTreeWebLtd\EventSourcererMessageUtilities\Model\StreamId;
 
 final readonly class Stream
 {
+    /**
+     * @param array{eventName: string, properties: array<string, mixed>} $events
+     */
     public function __construct(
         public StreamId $id,
         public StreamName $name,

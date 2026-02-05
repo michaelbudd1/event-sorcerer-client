@@ -15,6 +15,9 @@ use PearTreeWebLtd\EventSourcererMessageUtilities\Model\MessageType;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Model\StreamId;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Model\WorkerId;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Service\CreateMessage;
+use React\EventLoop\Loop;
+use React\EventLoop\Timer\Timer;
+use React\Promise\Deferred;
 use React\Promise\PromiseInterface;
 use React\Socket\ConnectionInterface;
 use React\Socket\Connector;
@@ -28,7 +31,8 @@ final readonly class Client
     public function __construct(
         private Config $config,
         private ConnectionInterface|PromiseInterface|null $connection = null
-    ) {}
+    ) {
+    }
 
     public function catchup(WorkerId $workerId, callable $newEventHandler, callable $logAction = null): self
     {
@@ -40,31 +44,38 @@ final readonly class Client
 
         $this
             ->createConnection()
-            ->then(function (ConnectionInterface $connection) use ($workerId, $newEventHandler, $logAction, &$externalConnection) {
+            ->then(function (ConnectionInterface $connection) use (
+                $workerId,
+                $newEventHandler,
+                $logAction,
+                &
+                $externalConnection
+            ) {
                 self::deleteSockFile();
 
                 $externalConnection = $connection;
 
                 $localServer = new UnixServer(self::IPC_URI);
-                $logAction = $logAction ?? self::nullLogActionHandler();
+                $logAction   = $logAction ?? self::nullLogActionHandler();
 
-                $localServer->on('connection', function (ConnectionInterface $localConnection) use ($connection, $logAction) {
-                    $localConnection->on('data', function ($data) use ($connection) {
-                        $connection->write($data);
-                    });
+                $localServer->on('connection',
+                    function (ConnectionInterface $localConnection) use ($connection, $logAction) {
+                        $localConnection->on('data', function ($data) use ($connection) {
+                            $connection->write($data);
+                        });
 
-                    $localConnection->on('error', function (\Exception $e) use ($logAction) {
-                        $logAction(ConnectionUpdate::ConnectionErrored, $e->getMessage());
-                    });
+                        $localConnection->on('error', function (\Exception $e) use ($logAction) {
+                            $logAction(ConnectionUpdate::ConnectionErrored, $e->getMessage());
+                        });
 
-                    $localConnection->on('close', function () use ($logAction) {
-                        $logAction(ConnectionUpdate::ConnectionClosed);
-                    });
+                        $localConnection->on('close', function () use ($logAction) {
+                            $logAction(ConnectionUpdate::ConnectionClosed);
+                        });
 
-                    $localConnection->on('end', function () use ($logAction) {
-                        $logAction(ConnectionUpdate::ConnectionEnded);
+                        $localConnection->on('end', function () use ($logAction) {
+                            $logAction(ConnectionUpdate::ConnectionEnded);
+                        });
                     });
-                });
 
                 // Buffer for incomplete events
                 $buffer = '';
@@ -217,52 +228,55 @@ final readonly class Client
             );
     }
 
-    public function readStream(StreamId $streamId): iterable
+    public function readStream(StreamId $streamId): \Generator
     {
-        $workerId = WorkerId::fromString('stream-reader');
+        $buffer = '';
+        $eventQueue = [];
+        $streamEnded = false;
+        $deferred = new Deferred();
 
-        $events = [];
-
-        await(
-            $this
+        $this
             ->createConnection()
-            ->then(function (ConnectionInterface $connection) use ($streamId, $workerId, &$events) {
-                // Buffer for incomplete events
-                $buffer = '';
-
-                $connection->on('data', function (string $data) use (&$buffer, &$events, &$connection) {
+            ->then(function (ConnectionInterface $connection) use ($streamId, &$eventQueue, &$buffer, &$deferred, &$streamEnded) {
+                $connection->on('data', function (string $data) use (&$buffer, &$eventQueue) {
                     $buffer .= $data;
-
                     $parts = explode(MessageMarkup::NewEventParser->value, $buffer);
-
-                    // Keep the last part as it might be incomplete
                     $buffer = array_pop($parts);
 
-                    $i = 0;
-
                     foreach (array_filter($parts) as $event) {
-                        $i++;
-
-                        $events[] = self::decodeEvent($event);
-
-                        if (10 === $i) {
-                            $connection->close();
-
-                            break;
-                        }
-
-                        // @todo if this is the last event then close the connection!!!
+                        $eventQueue[] = self::decodeEvent($event);
                     }
                 });
 
-                $this->handleConnectionErrors($connection);
+                $connection->on('end', function () use (&$streamEnded, &$deferred) {
+                    $streamEnded = true;
+                    $deferred->resolve(null);
+                });
+
+                $connection->on('error', function (\Exception $e) use ($connection, &$deferred) {
+//                    $deferred->reject();
+                    $connection->close();
+                });
 
                 $applicationId = ApplicationId::fromString($this->config->eventSourcererApplicationId);
                 $connection->write(CreateMessage::forReadingStream($streamId, $applicationId));
-            })
-        );
+            });
 
-        yield from $events;
+        // Process events as they arrive
+        while (!$streamEnded || !empty($eventQueue)) {
+            while (!empty($eventQueue)) {
+                yield array_shift($eventQueue);
+            }
+
+            // Give the event loop a chance to run
+            if (!$streamEnded) {
+                $tick = new Deferred();
+                Loop::futureTick(function() use ($tick) {
+                    $tick->resolve(null);
+                });
+                await($tick->promise());
+            }
+        }
     }
 
     private static function deleteSockFile(): void
@@ -276,10 +290,10 @@ final readonly class Client
     {
         return static function (ConnectionUpdate $update, ?string $message = null) {
             echo sprintf(
-                'Connection update: %s %s',
-                $update->name,
-                $message ?? '',
-            ) . PHP_EOL;
+                    'Connection update: %s %s',
+                    $update->name,
+                    $message ?? '',
+                ) . PHP_EOL;
         };
     }
 
