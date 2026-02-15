@@ -71,9 +71,9 @@ final readonly class HttpStreamRepository implements StreamRepository
             $this->url(),
             [
                 'json' => [
-                    'event'      => $event['event'],
+                    'event' => $event['event'],
                     'properties' => $event,
-                    'streamId'   => $aggregate->id->toString(),
+                    'stream' => $aggregate->id->toString(),
                     'streamName' => $aggregate->name->toString(),
                 ],
             ]
