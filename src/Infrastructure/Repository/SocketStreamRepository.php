@@ -21,6 +21,12 @@ final readonly class SocketStreamRepository implements StreamRepository
 
     public function save(Stream $aggregate): void
     {
-        // @todo implement!
+        foreach ($aggregate->events as $event) {
+            dd($event);
+//            $this->eventSourcererClient->writeNewEvent(
+//                $aggregate->id,
+//                $event
+//            );
+        }
     }
 }
