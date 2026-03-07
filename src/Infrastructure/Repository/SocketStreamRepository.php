@@ -8,6 +8,8 @@ use PearTreeWeb\EventSourcerer\Client\Domain\Model\Stream;
 use PearTreeWeb\EventSourcerer\Client\Domain\Repository\StreamRepository;
 use PearTreeWeb\EventSourcerer\Client\Infrastructure\Client;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Model\Checkpoint;
+use PearTreeWebLtd\EventSourcererMessageUtilities\Model\EventName;
+use PearTreeWebLtd\EventSourcererMessageUtilities\Model\EventVersion;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Model\StreamId;
 
 final readonly class SocketStreamRepository implements StreamRepository
@@ -22,11 +24,15 @@ final readonly class SocketStreamRepository implements StreamRepository
     public function save(Stream $aggregate): void
     {
         foreach ($aggregate->events as $event) {
-            dd($event);
-//            $this->eventSourcererClient->writeNewEvent(
-//                $aggregate->id,
-//                $event
-//            );
+            $payload = $event;
+            unset($payload['event']);
+
+            $this->eventSourcererClient->writeNewEvent(
+                $aggregate->id,
+                EventName::fromString($event['event']),
+                EventVersion::one(),
+                $payload,
+            );
         }
     }
 }
