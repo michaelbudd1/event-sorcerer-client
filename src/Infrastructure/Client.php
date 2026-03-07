@@ -216,8 +216,9 @@ final readonly class Client
         EventVersion $eventVersion,
         array $payload
     ): void {
-        $this
-            ?->connection
+        $connection = $this->connection ?? $this->createLocalConnection();
+
+        $connection
             ->write(
                 CreateMessage::forWriteNewEvent(
                     $streamId,
