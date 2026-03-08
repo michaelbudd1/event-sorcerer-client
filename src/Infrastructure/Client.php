@@ -215,17 +215,24 @@ final readonly class Client
         EventVersion $eventVersion,
         array $payload
     ): void {
-        $connection = $this->connection ?? await($this->createConnection());
+        $message = CreateMessage::forWriteNewEvent(
+            $streamId,
+            $eventName,
+            $eventVersion,
+            $payload,
+        );
 
-        $connection
-            ->write(
-                CreateMessage::forWriteNewEvent(
-                    $streamId,
-                    $eventName,
-                    $eventVersion,
-                    $payload
-                )
-            );
+        if (null !== $this->connection) {
+            $this->connection->write($message);
+
+            return;
+        }
+
+        $this
+            ->createConnection()
+            ->then(function (ConnectionInterface $connection) use ($message) {
+                $connection->write($message);
+            });
     }
 
     public function readStream(StreamId $streamId): \Generator
