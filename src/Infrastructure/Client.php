@@ -16,7 +16,6 @@ use PearTreeWebLtd\EventSourcererMessageUtilities\Model\StreamId;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Model\WorkerId;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Service\CreateMessage;
 use React\EventLoop\Loop;
-use React\EventLoop\Timer\Timer;
 use React\Promise\Deferred;
 use React\Promise\PromiseInterface;
 use React\Socket\ConnectionInterface;
@@ -173,8 +172,6 @@ final readonly class Client
      */
     public function createLocalConnection()
     {
-        self::deleteSockFile();
-
         try {
             $connection = stream_socket_client('unix://' . self::IPC_URI, $errorCode, $errorMessage);
 
