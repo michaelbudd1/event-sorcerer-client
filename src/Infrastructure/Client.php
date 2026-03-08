@@ -232,6 +232,7 @@ final readonly class Client
             ->createConnection()
             ->then(function (ConnectionInterface $connection) use ($message) {
                 $connection->write($message);
+                $connection->end();
             });
     }
 
