@@ -228,16 +228,10 @@ final readonly class Client
             return;
         }
 
+        /** must wait for promise to resolve or writing sequence could become distorted */
         $connection = await($this->createConnection());
         $connection->write($message);
         $connection->end();
-//
-//        $this
-//            ->createConnection()
-//            ->then(function (ConnectionInterface $connection) use ($message) {
-//                $connection->write($message);
-//                $connection->end();
-//            });
     }
 
     public function readStream(StreamId $streamId): \Generator
