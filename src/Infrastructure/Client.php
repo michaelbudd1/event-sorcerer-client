@@ -215,7 +215,7 @@ final readonly class Client
         EventVersion $eventVersion,
         array $payload
     ): void {
-        $connection = $this->connection ?? $this->createLocalConnection();
+        $connection = $this->connection ?? $this->createConnection();
 
         $connection
             ->write(
