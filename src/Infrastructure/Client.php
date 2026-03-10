@@ -224,6 +224,8 @@ final readonly class Client
             $expectedCurrentVersion,
         );
 
+        dd($message);
+
         if (null !== $this->connection) {
             $this->connection->write($message);
 
