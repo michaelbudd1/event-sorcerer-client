@@ -75,7 +75,7 @@ final readonly class HttpStreamRepository implements StreamRepository
                     'properties' => $event,
                     'stream' => $aggregate->id->toString(),
                     'streamName' => $aggregate->name->toString(),
-                    'currentVersion' => $aggregate->currentVersion,
+                    'currentVersion' => $aggregate->nextVersion,
                 ],
             ]
         );

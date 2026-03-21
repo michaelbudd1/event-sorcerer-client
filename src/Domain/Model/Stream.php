@@ -15,6 +15,6 @@ final readonly class Stream
         public StreamId $id,
         public StreamName $name,
         public array $events,
-        public int $currentVersion,
+        public int $nextVersion,
     ) {}
 }

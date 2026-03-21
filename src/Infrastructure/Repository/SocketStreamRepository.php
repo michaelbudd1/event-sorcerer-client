@@ -32,7 +32,7 @@ final readonly class SocketStreamRepository implements StreamRepository
                 EventName::fromString($event['event']),
                 EventVersion::fromInt($event['version']),
                 $payload,
-                $aggregate->currentVersion,
+                $aggregate->nextVersion,
             );
         }
     }
