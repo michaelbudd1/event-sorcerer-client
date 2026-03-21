@@ -23,7 +23,11 @@ final readonly class SocketStreamRepository implements StreamRepository
 
     public function save(Stream $aggregate): void
     {
+        $nextVersion = $aggregate->nextVersion - count($aggregate->events);
+
         foreach ($aggregate->events as $event) {
+            $nextVersion++;
+
             $payload = $event;
             unset($payload['event']);
 
@@ -32,7 +36,7 @@ final readonly class SocketStreamRepository implements StreamRepository
                 EventName::fromString($event['event']),
                 EventVersion::fromInt($event['version']),
                 $payload,
-                $aggregate->nextVersion,
+                $nextVersion,
             );
         }
     }
