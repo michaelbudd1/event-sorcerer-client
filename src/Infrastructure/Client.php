@@ -210,18 +210,18 @@ final readonly class Client
     }
 
     public function writeNewEvent(
-        StreamId $streamId,
-        EventName $eventName,
+        StreamId     $streamId,
+        EventName    $eventName,
         EventVersion $eventVersion,
-        array $payload,
-        ?int $expectedCurrentVersion = 0,
+        array        $payload,
+        ?int         $expectedNextVersion = 0,
     ): void {
         $message = CreateMessage::forWriteNewEvent(
             $streamId,
             $eventName,
             $eventVersion,
             $payload,
-            $expectedCurrentVersion,
+            $expectedNextVersion,
         );
 
         if (null !== $this->connection) {
