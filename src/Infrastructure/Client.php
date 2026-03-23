@@ -234,8 +234,8 @@ final readonly class Client
         /** @var ConnectionInterface $connection */
         $connection = await($this->createConnection());
 
-        if (true === $connection->write($message)) {
-            dd('yep!');
+        if (false === $connection->write($message)) {
+
         }
 
         $connection->end();
