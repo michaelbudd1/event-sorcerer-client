@@ -235,15 +235,14 @@ final readonly class Client
         $connection = await($this->createConnection());
         $connection->write($message);
 
-//        while (true) {
-        $connection->on('data', function ($chunk) use ($connection) {
-            dd('here with', $chunk);
+        while (true) {
+            $connection->on('data', function ($chunk) use ($connection) {
+                dd('here with', $chunk);
 
 
-
-            $connection->end();
-        });
-
+                $connection->end();
+            });
+        }
 //        $connection->end();
     }
 
