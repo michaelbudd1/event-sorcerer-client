@@ -233,17 +233,12 @@ final readonly class Client
         /** must wait for promise to resolve or writing sequence could become distorted */
         /** @var ConnectionInterface $connection */
         $connection = await($this->createConnection());
-        $connection->write($message);
 
-        while (true) {
-            $connection->on('data', function ($chunk) use ($connection) {
-                dd('here with', $chunk);
-
-
-                $connection->end();
-            });
+        if (true === $connection->write($message)) {
+            dd('yep!');
         }
-//        $connection->end();
+
+        $connection->end();
     }
 
     public function readStream(StreamId $streamId): \Generator
