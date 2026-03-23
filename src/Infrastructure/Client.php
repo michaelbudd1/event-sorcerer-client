@@ -230,8 +230,6 @@ final readonly class Client
             return;
         }
 
-        dd('here');
-
         /** must wait for promise to resolve or writing sequence could become distorted */
         /** @var ConnectionInterface $connection */
         $connection = await($this->createConnection());
@@ -239,7 +237,7 @@ final readonly class Client
 
 //        while (true) {
         $connection->on('data', function ($chunk) use ($connection) {
-            dd($chunk);
+            dd('here with', $chunk);
 
 
 
