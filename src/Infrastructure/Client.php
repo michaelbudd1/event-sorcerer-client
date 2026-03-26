@@ -225,20 +225,58 @@ final readonly class Client
         );
 
         if (null !== $this->connection) {
+            // Long-lived connection — attach a one-time data handler
+            $deferred = new Deferred();
+
+            $this->connection->once('data', function (string $data) use ($deferred) {
+                $decoded = $this->decodeAck($data);
+                if ('ok' === $decoded['status']) {
+                    $deferred->resolve($decoded);
+                } else {
+                    $deferred->reject(new \RuntimeException($decoded['error'] ?? 'Write rejected'));
+                }
+            });
+
             $this->connection->write($message);
+            await($deferred->promise());
 
             return;
         }
 
-        /** must wait for promise to resolve or writing sequence could become distorted */
-        /** @var ConnectionInterface $connection */
-        $connection = await($this->createConnection());
+        // Short-lived connection path
+        $deferred = new Deferred();
 
-        if (false === $connection->write($message)) {
+        $this->createConnection()
+             ->then(function (ConnectionInterface $connection) use ($message, $deferred) {
+                 $buffer = '';
+                 $connection->on('data', function (string $data) use ($connection, $deferred, &$buffer) {
+                     $buffer .= $data;
+                     $decoded = $this->decodeAck($buffer);
+                     if ($decoded !== null) {
+                         $connection->end();
+                         if ('ok' === $decoded['status']) {
+                             $deferred->resolve($decoded);
+                         } else {
+                             $deferred->reject(new \RuntimeException($decoded['error'] ?? 'Write rejected'));
+                         }
+                     }
+                 });
 
-        }
+                 $connection->on('error', fn(\Exception $e) => $deferred->reject($e));
+                 $connection->write($message);
+             });
 
-        $connection->end();
+        await($deferred->promise());
+
+//        /** must wait for promise to resolve or writing sequence could become distorted */
+//        /** @var ConnectionInterface $connection */
+//        $connection = await($this->createConnection());
+//
+//        if (false === $connection->write($message)) {
+//
+//        }
+//
+//        $connection->end();
     }
 
     public function readStream(StreamId $streamId): \Generator
@@ -266,8 +304,7 @@ final readonly class Client
                     $deferred->resolve(null);
                 });
 
-                $connection->on('error', function (\Exception $e) use ($connection, &$deferred) {
-//                    $deferred->reject();
+                $connection->on('error', function (\Exception $e) use ($connection) {
                     $connection->close();
                 });
 
@@ -323,5 +360,20 @@ final readonly class Client
         $connection->on('end', function () {
             throw MasterConnectionBroken::becauseItEnded();
         });
+    }
+
+    private function decodeAck(string $data): ?array
+    {
+        $regex = sprintf('/%s {.+}/', MessageType::NewEventAccepted->value);
+        if (!preg_match($regex, $data, $matches)) {
+            return null;
+        }
+
+        return json_decode(
+            trim(str_replace(MessageType::NewEventAccepted->value, '', $matches[0])),
+            true,
+            512,
+            JSON_THROW_ON_ERROR
+        );
     }
 }
