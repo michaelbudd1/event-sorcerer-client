@@ -228,8 +228,9 @@ final readonly class Client
             // Long-lived connection — attach a one-time data handler
             $deferred = new Deferred();
 
-            $this->connection->once('data', function (string $data) use ($deferred) {
-                $decoded = $this->decodeAck($data);
+            $this->connection->once('data', function (string $data) use ($deferred, $streamId, $expectedNextVersion) {
+                $decoded = $this->decodeAck($data, $streamId, $expectedNextVersion);
+
                 if ('ok' === $decoded['status']) {
                     $deferred->resolve($decoded);
                 } else {
@@ -247,36 +248,27 @@ final readonly class Client
         $deferred = new Deferred();
 
         $this->createConnection()
-             ->then(function (ConnectionInterface $connection) use ($message, $deferred) {
-                 $buffer = '';
-                 $connection->on('data', function (string $data) use ($connection, $deferred, &$buffer) {
-                     $buffer .= $data;
-                     $decoded = $this->decodeAck($buffer);
-                     if ($decoded !== null) {
-                         $connection->end();
-                         if ('ok' === $decoded['status']) {
-                             $deferred->resolve($decoded);
-                         } else {
-                             $deferred->reject(new \RuntimeException($decoded['error'] ?? 'Write rejected'));
-                         }
-                     }
-                 });
+            ->then(function (ConnectionInterface $connection) use ($message, $deferred, $streamId, $expectedNextVersion) {
+                $buffer = '';
+                $connection->on('data', function (string $data) use ($connection, $deferred, &$buffer, $streamId, $expectedNextVersion) {
+                    $buffer .= $data;
+                    $decoded = $this->decodeAck($buffer, $streamId, $expectedNextVersion);
 
-                 $connection->on('error', fn(\Exception $e) => $deferred->reject($e));
-                 $connection->write($message);
-             });
+                    if ($decoded !== null) {
+                        $connection->end();
+                        if ('ok' === $decoded['status']) {
+                            $deferred->resolve($decoded);
+                        } else {
+                            $deferred->reject(new \RuntimeException($decoded['error'] ?? 'Write rejected'));
+                        }
+                    }
+                });
+
+                $connection->on('error', fn(\Exception $e) => $deferred->reject($e));
+                $connection->write($message);
+            });
 
         await($deferred->promise());
-
-//        /** must wait for promise to resolve or writing sequence could become distorted */
-//        /** @var ConnectionInterface $connection */
-//        $connection = await($this->createConnection());
-//
-//        if (false === $connection->write($message)) {
-//
-//        }
-//
-//        $connection->end();
     }
 
     public function readStream(StreamId $streamId): \Generator
@@ -362,18 +354,27 @@ final readonly class Client
         });
     }
 
-    private function decodeAck(string $data): ?array
+
+    /**
+     * @return array{status: string}|null
+     */
+    private function decodeAck(string $data, StreamId $newEventStreamId, int $expectedVersion): ?array
     {
-        $regex = sprintf('/%s {.+}/', MessageType::NewEventAccepted->value);
+        $regex = sprintf('/%s [a-z\-0-9]+ [0-9]+/', MessageType::NewEventAccepted->value);
+
         if (!preg_match($regex, $data, $matches)) {
             return null;
         }
 
-        return json_decode(
-            trim(str_replace(MessageType::NewEventAccepted->value, '', $matches[0])),
-            true,
-            512,
-            JSON_THROW_ON_ERROR
-        );
+        $acceptedEvent = trim(str_replace(MessageType::NewEventAccepted->value, '', $matches[0]));
+
+        $streamAndAllSequence = explode(' ', $acceptedEvent);
+
+        $isAcknowledgementForNewEvent = $newEventStreamId->sameAs(StreamId::fromString($streamAndAllSequence[0]))
+            && $expectedVersion === (int) $streamAndAllSequence[1];
+
+        return [
+            'status' => $isAcknowledgementForNewEvent ? 'ok' : 'error',
+        ];
     }
 }
