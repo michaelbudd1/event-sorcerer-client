@@ -42,24 +42,19 @@ final readonly class Client
             return await($promise);
         }
 
-        // If the event loop is already running (we're inside a callback of the
-        // Revolt/React loop), we must not call Loop::run() again. In this case
-        // we can safely use React\Async's scheduler to suspend the current
-        // execution and resume once the promise settles.
-        //
-        // This avoids the SimpleFiber assertion seen when the scheduler is
-        // responsible for starting/stopping the loop itself.
+        // Prefer React\Async scheduler to suspend the current execution and
+        // resume once the promise settles. This works whether the loop is
+        // already running or not. If for any reason the scheduler path fails
+        // (e.g. unusual shutdown behavior), fall back to driving the loop
+        // manually below.
         try {
-            if (RevoltLoop::getDriver()->isRunning()) {
-                return await(async(fn() => $promise)());
-            }
+            return await(async(fn() => $promise)());
         } catch (\Throwable) {
-            // If the driver check is unavailable for any reason, fall back to
-            // driving the loop below.
+            // Fall through to manual loop driving.
         }
 
-        // Event loop not running: drive the React event loop until the promise
-        // settles without involving the Async scheduler.
+        // Fallback: Drive the React event loop until the promise settles
+        // without involving the Async scheduler.
         $resolved = false;
         $result = null;
         $error = null;
