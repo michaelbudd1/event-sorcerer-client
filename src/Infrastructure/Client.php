@@ -22,6 +22,8 @@ use React\Socket\ConnectionInterface;
 use React\Socket\Connector;
 use React\Socket\UnixServer;
 use Revolt\EventLoop as RevoltLoop;
+use function React\Async\async;
+use function React\Async\await;
 
 final readonly class Client
 {
@@ -31,6 +33,15 @@ final readonly class Client
         private Config $config,
         private ConnectionInterface|PromiseInterface|null $connection = null
     ) {
+    }
+
+    private function awaitPromise(PromiseInterface $promise): mixed
+    {
+        if (\Fiber::getCurrent()) {
+            return await($promise);
+        }
+
+        return await(async(fn() => await($promise))());
     }
 
     public function catchup(WorkerId $workerId, callable $newEventHandler, callable $logAction = null): self
@@ -239,13 +250,7 @@ final readonly class Client
             });
 
             $this->connection->write($message);
-
-            $suspension = RevoltLoop::getSuspension();
-            $deferred->promise()->then(
-                fn($value) => $suspension->resume($value),
-                fn($reason) => $suspension->throw($reason instanceof \Throwable ? $reason : new \RuntimeException((string)$reason))
-            );
-            $suspension->suspend();
+            $this->awaitPromise($deferred->promise());
 
             return;
         }
@@ -274,12 +279,7 @@ final readonly class Client
                 $connection->write($message);
             });
 
-        $suspension = RevoltLoop::getSuspension();
-        $deferred->promise()->then(
-            fn($value) => $suspension->resume($value),
-            fn($reason) => $suspension->throw($reason instanceof \Throwable ? $reason : new \RuntimeException((string)$reason))
-        );
-        $suspension->suspend();
+        $this->awaitPromise($deferred->promise());
     }
 
     public function readStream(StreamId $streamId): \Generator
@@ -327,10 +327,7 @@ final readonly class Client
                 Loop::futureTick(function() use ($tick) {
                     $tick->resolve(null);
                 });
-                
-                $suspension = RevoltLoop::getSuspension();
-                $tick->promise()->then(fn() => $suspension->resume());
-                $suspension->suspend();
+                $this->awaitPromise($tick->promise());
             }
         }
     }
