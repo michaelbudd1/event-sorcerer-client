@@ -286,15 +286,28 @@ final readonly class Client
             // Long-lived connection — attach a one-time data handler
             $deferred = new Deferred();
 
-            $this->connection->once('data', function (string $data) use ($deferred, $streamId, $expectedNextVersion) {
-                $decoded = $this->decodeAck($data, $streamId, $expectedNextVersion);
+            // Buffer across chunks because ACK can arrive split across frames.
+            $buffer = '';
+            $listener = null;
+            $listener = function (string $data) use (&$buffer, $deferred, $streamId, $expectedNextVersion, &$listener) {
+                $buffer .= $data;
+                $decoded = $this->decodeAck($buffer, $streamId, $expectedNextVersion);
 
-                if ('ok' === $decoded['status']) {
-                    $deferred->resolve($decoded);
-                } else {
-                    $deferred->reject(new \RuntimeException($decoded['error'] ?? 'Write rejected'));
+                if ($decoded !== null) {
+                    // Remove this temporary listener once we've decoded the ACK
+                    if (method_exists($this->connection, 'removeListener')) {
+                        $this->connection->removeListener('data', $listener);
+                    }
+
+                    if ('ok' === $decoded['status']) {
+                        $deferred->resolve($decoded);
+                    } else {
+                        $deferred->reject(new \RuntimeException($decoded['error'] ?? 'Write rejected'));
+                    }
                 }
-            });
+            };
+
+            $this->connection->on('data', $listener);
 
             $this->connection->write($message);
             $this->awaitPromise($deferred->promise());
