@@ -42,11 +42,43 @@ final readonly class Client
             return await($promise);
         }
 
-        // Outside a Fiber, wrap the promise-producing callable in async()
-        // and await the resulting promise once. Do not nest await() calls here,
-        // as that can confuse the SimpleFiber scheduler when the loop completes
-        // without yielding a continuation.
-        return await(async(fn() => $promise)());
+        // Outside a Fiber, avoid React\Async scheduler entirely to prevent
+        // SimpleFiber assertion errors when the loop ends without a continuation.
+        // Drive the React event loop until the promise settles.
+        $resolved = false;
+        $result = null;
+        $error = null;
+
+        $promise->then(
+            static function ($value) use (&$resolved, &$result) {
+                $resolved = true;
+                $result = $value;
+                Loop::stop();
+            },
+            static function ($reason) use (&$resolved, &$error) {
+                $resolved = true;
+                $error = $reason instanceof \Throwable ? $reason : new \RuntimeException((string) $reason);
+                Loop::stop();
+            }
+        );
+
+        // Ensure the loop has at least one tick to process handlers.
+        Loop::futureTick(static function (): void {
+            // no-op
+        });
+
+        // Run the loop until the promise resolves/rejects.
+        Loop::run();
+
+        if (!$resolved) {
+            throw new \RuntimeException('Promise did not resolve while running the loop.');
+        }
+
+        if ($error) {
+            throw $error;
+        }
+
+        return $result;
     }
 
     public function catchup(WorkerId $workerId, callable $newEventHandler, ?callable $logAction = null): self
