@@ -21,7 +21,7 @@ use React\Promise\PromiseInterface;
 use React\Socket\ConnectionInterface;
 use React\Socket\Connector;
 use React\Socket\UnixServer;
-use function React\Async\await;
+use Revolt\EventLoop as RevoltLoop;
 
 final readonly class Client
 {
@@ -239,7 +239,13 @@ final readonly class Client
             });
 
             $this->connection->write($message);
-            await($deferred->promise());
+
+            $suspension = RevoltLoop::getSuspension();
+            $deferred->promise()->then(
+                fn($value) => $suspension->resume($value),
+                fn($reason) => $suspension->throw($reason instanceof \Throwable ? $reason : new \RuntimeException((string)$reason))
+            );
+            $suspension->suspend();
 
             return;
         }
@@ -268,7 +274,12 @@ final readonly class Client
                 $connection->write($message);
             });
 
-        await($deferred->promise());
+        $suspension = RevoltLoop::getSuspension();
+        $deferred->promise()->then(
+            fn($value) => $suspension->resume($value),
+            fn($reason) => $suspension->throw($reason instanceof \Throwable ? $reason : new \RuntimeException((string)$reason))
+        );
+        $suspension->suspend();
     }
 
     public function readStream(StreamId $streamId): \Generator
@@ -316,7 +327,10 @@ final readonly class Client
                 Loop::futureTick(function() use ($tick) {
                     $tick->resolve(null);
                 });
-                await($tick->promise());
+                
+                $suspension = RevoltLoop::getSuspension();
+                $tick->promise()->then(fn() => $suspension->resume());
+                $suspension->suspend();
             }
         }
     }
