@@ -21,8 +21,6 @@ use React\Promise\PromiseInterface;
 use React\Socket\ConnectionInterface;
 use React\Socket\Connector;
 use React\Socket\UnixServer;
-use Revolt\EventLoop as RevoltLoop;
-use function React\Async\async;
 use function React\Async\await;
 
 final readonly class Client
@@ -35,63 +33,7 @@ final readonly class Client
     ) {
     }
 
-    private function awaitPromise(PromiseInterface $promise): mixed
-    {
-        // If we're already inside a Fiber, we can await the promise directly.
-        if (\Fiber::getCurrent()) {
-            return await($promise);
-        }
-
-        // Prefer React\Async scheduler to suspend the current execution and
-        // resume once the promise settles. This works whether the loop is
-        // already running or not. If for any reason the scheduler path fails
-        // (e.g. unusual shutdown behavior), fall back to driving the loop
-        // manually below.
-        try {
-            return await(async(fn() => $promise)());
-        } catch (\Throwable) {
-            // Fall through to manual loop driving.
-        }
-
-        // Fallback: Drive the React event loop until the promise settles
-        // without involving the Async scheduler.
-        $resolved = false;
-        $result = null;
-        $error = null;
-
-        $promise->then(
-            static function ($value) use (&$resolved, &$result) {
-                $resolved = true;
-                $result = $value;
-                Loop::stop();
-            },
-            static function ($reason) use (&$resolved, &$error) {
-                $resolved = true;
-                $error = $reason instanceof \Throwable ? $reason : new \RuntimeException((string) $reason);
-                Loop::stop();
-            }
-        );
-
-        // Ensure the loop has at least one tick to process handlers.
-        Loop::futureTick(static function (): void {
-            // no-op
-        });
-
-        // Run the loop until the promise resolves/rejects.
-        Loop::run();
-
-        if (!$resolved) {
-            throw new \RuntimeException('Promise did not resolve while running the loop.');
-        }
-
-        if ($error) {
-            throw $error;
-        }
-
-        return $result;
-    }
-
-    public function catchup(WorkerId $workerId, callable $newEventHandler, ?callable $logAction = null): self
+    public function catchup(WorkerId $workerId, callable $newEventHandler, callable $logAction = null): self
     {
         if (null !== $this->connection) {
             return $this;
@@ -268,78 +210,30 @@ final readonly class Client
     }
 
     public function writeNewEvent(
-        StreamId     $streamId,
-        EventName    $eventName,
+        StreamId $streamId,
+        EventName $eventName,
         EventVersion $eventVersion,
-        array        $payload,
-        ?int         $expectedNextVersion = 0,
+        array $payload,
+        ?int $expectedCurrentVersion = 0,
     ): void {
         $message = CreateMessage::forWriteNewEvent(
             $streamId,
             $eventName,
             $eventVersion,
             $payload,
-            $expectedNextVersion,
+            $expectedCurrentVersion,
         );
 
         if (null !== $this->connection) {
-            // Long-lived connection — attach a one-time data handler
-            $deferred = new Deferred();
-
-            // Buffer across chunks because ACK can arrive split across frames.
-            $buffer = '';
-            $listener = null;
-            $listener = function (string $data) use (&$buffer, $deferred, $streamId, $expectedNextVersion, &$listener) {
-                $buffer .= $data;
-                $decoded = $this->decodeAck($buffer, $streamId, $expectedNextVersion);
-
-                if ($decoded !== null) {
-                    // Remove this temporary listener once we've decoded the ACK
-                    if (method_exists($this->connection, 'removeListener')) {
-                        $this->connection->removeListener('data', $listener);
-                    }
-
-                    if ('ok' === $decoded['status']) {
-                        $deferred->resolve($decoded);
-                    } else {
-                        $deferred->reject(new \RuntimeException($decoded['error'] ?? 'Write rejected'));
-                    }
-                }
-            };
-
-            $this->connection->on('data', $listener);
-
             $this->connection->write($message);
-            $this->awaitPromise($deferred->promise());
 
             return;
         }
 
-        // Short-lived connection path
-        $deferred = new Deferred();
-
-        $this->createConnection()
-            ->then(function (ConnectionInterface $connection) use ($message, $deferred, $streamId, $expectedNextVersion) {
-                $buffer = '';
-                $connection->on('data', function (string $data) use ($connection, $deferred, &$buffer, $streamId, $expectedNextVersion) {
-                    $buffer .= $data;
-                    $decoded = $this->decodeAck($buffer, $streamId, $expectedNextVersion);
-
-                    if ($decoded !== null) {
-                        $connection->end();
-                        if ('ok' === $decoded['status']) {
-                            $deferred->resolve($decoded);
-                        } else {
-                            $deferred->reject(new \RuntimeException($decoded['error'] ?? 'Write rejected'));
-                        }
-                    }
-                });
-
-                $connection->on('error', fn(\Exception $e) => $deferred->reject($e));
-                $connection->write($message);
-            });
-
-        $this->awaitPromise($deferred->promise());
+        /** must wait for promise to resolve or writing sequence could become distorted */
+        $connection = await($this->createConnection());
+        $connection->write($message);
+        $connection->end();
     }
 
     public function readStream(StreamId $streamId): \Generator
@@ -367,7 +261,8 @@ final readonly class Client
                     $deferred->resolve(null);
                 });
 
-                $connection->on('error', function (\Exception $e) use ($connection) {
+                $connection->on('error', function (\Exception $e) use ($connection, &$deferred) {
+//                    $deferred->reject();
                     $connection->close();
                 });
 
@@ -387,7 +282,7 @@ final readonly class Client
                 Loop::futureTick(function() use ($tick) {
                     $tick->resolve(null);
                 });
-                $this->awaitPromise($tick->promise());
+                await($tick->promise());
             }
         }
     }
@@ -423,29 +318,5 @@ final readonly class Client
         $connection->on('end', function () {
             throw MasterConnectionBroken::becauseItEnded();
         });
-    }
-
-
-    /**
-     * @return array{status: string}|null
-     */
-    private function decodeAck(string $data, StreamId $newEventStreamId, int $expectedVersion): ?array
-    {
-        $regex = sprintf('/%s [a-z\-0-9]+ [0-9]+/', MessageType::NewEventAccepted->value);
-
-        if (!preg_match($regex, $data, $matches)) {
-            return null;
-        }
-
-        $acceptedEvent = trim(str_replace(MessageType::NewEventAccepted->value, '', $matches[0]));
-
-        $streamAndAllSequence = explode(' ', $acceptedEvent);
-
-        $isAcknowledgementForNewEvent = $newEventStreamId->sameAs(StreamId::fromString($streamAndAllSequence[0]))
-            && $expectedVersion === (int) $streamAndAllSequence[1];
-
-        return [
-            'status' => $isAcknowledgementForNewEvent ? 'ok' : 'error',
-        ];
     }
 }
