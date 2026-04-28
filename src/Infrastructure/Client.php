@@ -42,9 +42,24 @@ final readonly class Client
             return await($promise);
         }
 
-        // Outside a Fiber, avoid React\Async scheduler entirely to prevent
-        // SimpleFiber assertion errors when the loop ends without a continuation.
-        // Drive the React event loop until the promise settles.
+        // If the event loop is already running (we're inside a callback of the
+        // Revolt/React loop), we must not call Loop::run() again. In this case
+        // we can safely use React\Async's scheduler to suspend the current
+        // execution and resume once the promise settles.
+        //
+        // This avoids the SimpleFiber assertion seen when the scheduler is
+        // responsible for starting/stopping the loop itself.
+        try {
+            if (RevoltLoop::getDriver()->isRunning()) {
+                return await(async(fn() => $promise)());
+            }
+        } catch (\Throwable) {
+            // If the driver check is unavailable for any reason, fall back to
+            // driving the loop below.
+        }
+
+        // Event loop not running: drive the React event loop until the promise
+        // settles without involving the Async scheduler.
         $resolved = false;
         $result = null;
         $error = null;
