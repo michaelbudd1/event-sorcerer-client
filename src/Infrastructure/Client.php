@@ -37,14 +37,19 @@ final readonly class Client
 
     private function awaitPromise(PromiseInterface $promise): mixed
     {
+        // If we're already inside a Fiber, we can await the promise directly.
         if (\Fiber::getCurrent()) {
             return await($promise);
         }
 
-        return await(async(fn() => await($promise))());
+        // Outside a Fiber, wrap the promise-producing callable in async()
+        // and await the resulting promise once. Do not nest await() calls here,
+        // as that can confuse the SimpleFiber scheduler when the loop completes
+        // without yielding a continuation.
+        return await(async(fn() => $promise)());
     }
 
-    public function catchup(WorkerId $workerId, callable $newEventHandler, callable $logAction = null): self
+    public function catchup(WorkerId $workerId, callable $newEventHandler, ?callable $logAction = null): self
     {
         if (null !== $this->connection) {
             return $this;
