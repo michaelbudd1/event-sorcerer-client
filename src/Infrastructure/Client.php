@@ -33,7 +33,7 @@ final readonly class Client
     ) {
     }
 
-    public function catchup(WorkerId $workerId, callable $newEventHandler, callable $logAction = null): self
+    public function catchup(WorkerId $workerId, callable $newEventHandler, ?callable $logAction = null): self
     {
         if (null !== $this->connection) {
             return $this;
