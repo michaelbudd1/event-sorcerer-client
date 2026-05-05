@@ -30,7 +30,7 @@
         "psr/cache": "^3.0",
         "symfony/cache": "8.0.*",
         "symfony/lock": "8.0.*",
-        "illuminate/collections": "^12.49",
+        "illuminate/collections": "^13.7.0",
         "react/event-loop": "^1.6.0"
     },
     "require-dev": {
