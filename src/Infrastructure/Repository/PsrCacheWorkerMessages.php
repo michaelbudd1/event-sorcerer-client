@@ -30,6 +30,21 @@ final readonly class PsrCacheWorkerMessages implements WorkerMessages
     public function getFor(WorkerId $workerId): iterable
     {
         foreach ($this->messages->getItem(self::cacheKey($workerId))->get() ?? [] as $message) {
+            /**
+             * @var array{
+             *     allSequence: int,
+             *     eventVersion: int,
+             *     name: string,
+             *     number: int,
+             *     payload: array,
+             *     stream: string,
+             *     occurred: string,
+             *     workerId: string,
+             *     catchupRequestStream: string,
+             * } $message
+             */
+            $this->removeFor($workerId, $message['allSequence']);
+
             yield $message;
         }
     }
