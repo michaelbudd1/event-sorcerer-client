@@ -43,8 +43,6 @@ final readonly class PsrCacheWorkerMessages implements WorkerMessages
              *     catchupRequestStream: string,
              * } $message
              */
-            $this->removeFor($workerId, $message['allSequence']);
-
             yield $message;
         }
     }
