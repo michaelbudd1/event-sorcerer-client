@@ -309,14 +309,17 @@ final readonly class Client
     private function handleConnectionErrors(ConnectionInterface $connection): void
     {
         $connection->on('error', function (\Exception $e) {
+            self::deleteSockFile();
             throw MasterConnectionBroken::becauseOfAnError($e->getMessage());
         });
 
         $connection->on('close', function () {
+            self::deleteSockFile();
             throw MasterConnectionBroken::becauseItClosed();
         });
 
         $connection->on('end', function () {
+            self::deleteSockFile();
             throw MasterConnectionBroken::becauseItEnded();
         });
     }
