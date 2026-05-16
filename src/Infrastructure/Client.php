@@ -39,6 +39,8 @@ final readonly class Client
             return $this;
         }
 
+        self::deleteSockFile();
+
         $externalConnection = null;
 
         $this
@@ -50,8 +52,6 @@ final readonly class Client
                 &
                 $externalConnection
             ) {
-                self::deleteSockFile();
-
                 $externalConnection = $connection;
 
                 $localServer = new UnixServer(self::IPC_URI);
@@ -262,8 +262,9 @@ final readonly class Client
                 });
 
                 $connection->on('error', function (\Exception $e) use ($connection, &$deferred) {
+                    dd($e);
 //                    $deferred->reject();
-                    $connection->close();
+//                    $connection->close();
                 });
 
                 $applicationId = ApplicationId::fromString($this->config->eventSourcererApplicationId);
