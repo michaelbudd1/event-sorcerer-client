@@ -262,9 +262,8 @@ final readonly class Client
                 });
 
                 $connection->on('error', function (\Exception $e) use ($connection, &$deferred) {
-                    dd($e);
-//                    $deferred->reject();
-//                    $connection->close();
+                    $deferred->reject($e->getMessage());
+                    $connection->close();
                 });
 
                 $applicationId = ApplicationId::fromString($this->config->eventSourcererApplicationId);
