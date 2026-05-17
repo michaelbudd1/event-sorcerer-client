@@ -112,6 +112,15 @@ final readonly class Client
         return new self($this->config, $externalConnection);
     }
 
+    public function stopCatchup(): void
+    {
+        $this->deleteSockFile();
+
+        if ($this->connection instanceof ConnectionInterface) {
+            $this->connection->close();
+        }
+    }
+
     public function createConnection(): PromiseInterface
     {
         return (new Connector())
