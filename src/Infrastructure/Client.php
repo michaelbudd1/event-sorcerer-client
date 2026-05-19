@@ -20,6 +20,7 @@ use React\Promise\Deferred;
 use React\Promise\PromiseInterface;
 use React\Socket\ConnectionInterface;
 use React\Socket\Connector;
+use React\Socket\SecureConnector;
 use React\Socket\UnixServer;
 use function React\Async\await;
 
@@ -123,7 +124,9 @@ final readonly class Client
 
     public function createConnection(): PromiseInterface
     {
-        return (new Connector())
+        $connector = new Connector();
+
+        return new SecureConnector($connector)
             ->connect(
                 sprintf(
                     '%s:%d',
@@ -166,14 +169,9 @@ final readonly class Client
 
         preg_match($regex, $event, $matches);
 
-        return json_decode(
-            trim(
-                str_replace(MessageType::NewEvent->value, '', $matches[0])
-            ),
-            true,
-            512,
-            JSON_THROW_ON_ERROR
-        );
+        return str_replace(MessageType::NewEvent->value, '', $matches[0])
+                |> trim(...)
+                |> (fn ($x) => json_decode($x, true, 512, JSON_THROW_ON_ERROR));
     }
 
     /**
