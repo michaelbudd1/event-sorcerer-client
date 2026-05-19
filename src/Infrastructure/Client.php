@@ -20,7 +20,6 @@ use React\Promise\Deferred;
 use React\Promise\PromiseInterface;
 use React\Socket\ConnectionInterface;
 use React\Socket\Connector;
-use React\Socket\SecureConnector;
 use React\Socket\UnixServer;
 use function React\Async\await;
 
@@ -124,9 +123,10 @@ final readonly class Client
 
     public function createConnection(): PromiseInterface
     {
-        $connector = new Connector();
-
-        return new SecureConnector($connector)
+        return new Connector([
+            'tls_verify_peer' => false,
+            'tls_verify_peer_name' => false,
+        ])
             ->connect(
                 sprintf(
                     '%s:%d',
