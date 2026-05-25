@@ -124,8 +124,10 @@ final readonly class Client
     public function createConnection(): PromiseInterface
     {
         return new Connector([
-            'tls_verify_peer' => false,
-            'tls_verify_peer_name' => false,
+            'tls' => [
+                'verify_peer'      => false,
+                'verify_peer_name' => false,
+            ],
         ])
             ->connect(
                 sprintf(
