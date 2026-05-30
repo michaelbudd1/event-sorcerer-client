@@ -19,6 +19,6 @@ final readonly class Config
         public ?bool $verifyPeer = false,
         public ?bool $verifyPeerName = false,
         public ?bool $allowSelfSigned = false,
-        public ?string $cafile = '/data/mkcert/rootCA.pem',
+        public ?string $cafile = null,
     ) {}
 }

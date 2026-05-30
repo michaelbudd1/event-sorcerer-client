@@ -145,16 +145,19 @@ final readonly class Client
         $certPath = sprintf('%s/%s.pem', $config->localCertificateDirectory, $config->eventSourcererApplicationId);
         $certKeyPath = sprintf('%s/%s-key.pem', $config->localCertificateDirectory, $config->eventSourcererApplicationId);
 
-        return new Connector([
-            'tls' => [
-                'local_cert'        => $certPath,
-                'local_pk'          => $certKeyPath,
-                'verify_peer'       => $config->verifyPeer,
-                'verify_peer_name'  => $config->verifyPeerName,
-                'allow_self_signed' => $config->allowSelfSigned,
-                'cafile'            => $config->cafile,
-            ],
-        ]);
+        $tlsOptions = [
+            'local_cert'        => $certPath,
+            'local_pk'          => $certKeyPath,
+            'verify_peer'       => $config->verifyPeer,
+            'verify_peer_name'  => $config->verifyPeerName,
+            'allow_self_signed' => $config->allowSelfSigned,
+        ];
+
+        if (null !== $config->cafile) {
+            $tlsOptions['cafile'] = $config->cafile;
+        }
+
+        return new Connector(['tls' => $tlsOptions]);
     }
 
     public function connected(): bool
@@ -259,7 +262,14 @@ final readonly class Client
         }
 
         /** must wait for promise to resolve or writing sequence could become distorted */
-        $connection = await($this->createConnection());
+        $connection = await(
+            $this->createConnection()->then(
+                null,
+                function (\Throwable $e) {
+                    throw new \RuntimeException('Could not connect to event sourcerer: ' . $e->getMessage(), 0, $e);
+                }
+            )
+        );
         $connection->write($message);
         $connection->end();
     }
