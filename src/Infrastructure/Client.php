@@ -15,6 +15,7 @@ use PearTreeWebLtd\EventSourcererMessageUtilities\Model\MessageType;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Model\StreamId;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Model\WorkerId;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Service\CreateMessage;
+use React\EventLoop\Loop;
 use React\Promise\Deferred;
 use React\Promise\PromiseInterface;
 use React\Socket\ConnectionInterface;
@@ -126,13 +127,10 @@ final readonly class Client
             ? self::secureConnector($this->config)
             : new Connector();
 
-        $scheme = $this->config->createSecure ? 'tls' : 'tcp';
-
         return $connector
             ->connect(
                 sprintf(
-                    '%s://%s:%d',
-                    $scheme,
+                    '%s:%d',
                     $this->config->serverHost,
                     $this->config->serverPort
                 )
@@ -144,19 +142,16 @@ final readonly class Client
         $certPath = sprintf('%s/%s.pem', $config->localCertificateDirectory, $config->eventSourcererApplicationId);
         $certKeyPath = sprintf('%s/%s-key.pem', $config->localCertificateDirectory, $config->eventSourcererApplicationId);
 
-        $tlsOptions = [
-            'local_cert'        => $certPath,
-            'local_pk'          => $certKeyPath,
-            'verify_peer'       => $config->verifyPeer,
-            'verify_peer_name'  => $config->verifyPeerName,
-            'allow_self_signed' => $config->allowSelfSigned,
-        ];
-
-        if (null !== $config->cafile) {
-            $tlsOptions['cafile'] = $config->cafile;
-        }
-
-        return new Connector(['tls' => $tlsOptions]);
+        return new Connector([
+            'tls' => [
+                'local_cert'        => $certPath,
+                'local_pk'          => $certKeyPath,
+                'verify_peer'       => $config->verifyPeer,
+                'verify_peer_name'  => $config->verifyPeerName,
+                'allow_self_signed' => $config->allowSelfSigned,
+                'cafile'            => $config->cafile,
+            ],
+        ]);
     }
 
     public function connected(): bool
@@ -260,49 +255,22 @@ final readonly class Client
             return;
         }
 
-        $scheme  = $this->config->createSecure ? 'tls' : 'tcp';
-        $address = sprintf('%s://%s:%d', $scheme, $this->config->serverHost, $this->config->serverPort);
-
-        $context = stream_context_create();
-
-        if ($this->config->createSecure) {
-            $certPath    = sprintf('%s/%s.pem', $this->config->localCertificateDirectory, $this->config->eventSourcererApplicationId);
-            $certKeyPath = sprintf('%s/%s-key.pem', $this->config->localCertificateDirectory, $this->config->eventSourcererApplicationId);
-
-            $tlsOptions = [
-                'local_cert'        => $certPath,
-                'local_pk'          => $certKeyPath,
-                'verify_peer'       => $this->config->verifyPeer,
-                'verify_peer_name'  => $this->config->verifyPeerName,
-                'allow_self_signed' => $this->config->allowSelfSigned,
-            ];
-
-            if (null !== $this->config->cafile) {
-                $tlsOptions['cafile'] = $this->config->cafile;
-            }
-
-            stream_context_set_option($context, ['ssl' => $tlsOptions]);
-        }
-
-        $socket = stream_socket_client($address, $errorCode, $errorMessage, 30, STREAM_CLIENT_CONNECT, $context);
-
-        if (false === $socket) {
-            throw new \RuntimeException('Could not connect to event sourcerer: ' . $errorMessage, $errorCode);
-        }
-
-        fwrite($socket, $message->toString());
-        fclose($socket);
+        /** must wait for promise to resolve or writing sequence could become distorted */
+        $connection = await($this->createConnection());
+        $connection->write($message);
+        $connection->end();
     }
 
     public function readStream(StreamId $streamId): \Generator
     {
         $buffer = '';
         $eventQueue = [];
+        $streamEnded = false;
         $deferred = new Deferred();
 
         $this
             ->createConnection()
-            ->then(function (ConnectionInterface $connection) use ($streamId, &$eventQueue, &$buffer, &$deferred) {
+            ->then(function (ConnectionInterface $connection) use ($streamId, &$eventQueue, &$buffer, &$deferred, &$streamEnded) {
                 $connection->on('data', function (string $data) use (&$buffer, &$eventQueue) {
                     $buffer .= $data;
                     $parts = explode(MessageMarkup::NewEventParser->value, $buffer);
@@ -313,7 +281,8 @@ final readonly class Client
                     }
                 });
 
-                $connection->on('end', function () use (&$deferred) {
+                $connection->on('end', function () use (&$streamEnded, &$deferred) {
+                    $streamEnded = true;
                     $deferred->resolve(null);
                 });
 
@@ -327,10 +296,19 @@ final readonly class Client
             });
 
         // Process events as they arrive
-        await($deferred->promise());
+        while (!$streamEnded || !empty($eventQueue)) {
+            while (!empty($eventQueue)) {
+                yield array_shift($eventQueue);
+            }
 
-        while (!empty($eventQueue)) {
-            yield array_shift($eventQueue);
+            // Give the event loop a chance to run
+            if (!$streamEnded) {
+                $tick = new Deferred();
+                Loop::futureTick(function() use ($tick) {
+                    $tick->resolve(null);
+                });
+                await($tick->promise());
+            }
         }
     }
 
