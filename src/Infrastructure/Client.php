@@ -123,16 +123,11 @@ final readonly class Client
 
     public function createConnection(): PromiseInterface
     {
-        return new Connector([
-            'tls' => [
-                'local_cert'        => '/path/to/server.crt',
-                'local_pk'          => '/path/to/server.key',
-                'verify_peer'       => true,
-                'verify_peer_name'  => false,
-                'allow_self_signed' => true,
-                'cafile'            => '/data/mkcert/rootCA.pem',
-            ],
-        ])
+        $connector = $this->config->createSecure
+            ? self::secureConnector($this->config)
+            : new Connector();
+
+        return $connector
             ->connect(
                 sprintf(
                     '%s:%d',
@@ -140,6 +135,23 @@ final readonly class Client
                     $this->config->serverPort
                 )
             );
+    }
+
+    private static function secureConnector(Config $config): Connector
+    {
+        $certPath = sprintf('%s/%s.pem', $config->localCertificateDirectory, $config->eventSourcererApplicationId);
+        $certKeyPath = sprintf('%s/%s-key.pem', $config->localCertificateDirectory, $config->eventSourcererApplicationId);
+
+        return new Connector([
+            'tls' => [
+                'local_cert'        => $certPath,
+                'local_pk'          => $certKeyPath,
+                'verify_peer'       => $config->verifyPeer,
+                'verify_peer_name'  => $config->verifyPeerName,
+                'allow_self_signed' => $config->allowSelfSigned,
+                'cafile'            => $config->cafile,
+            ],
+        ]);
     }
 
     public function connected(): bool
