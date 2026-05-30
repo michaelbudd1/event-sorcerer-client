@@ -127,10 +127,13 @@ final readonly class Client
             ? self::secureConnector($this->config)
             : new Connector();
 
+        $scheme = $this->config->createSecure ? 'tls' : 'tcp';
+
         return $connector
             ->connect(
                 sprintf(
-                    '%s:%d',
+                    '%s://%s:%d',
+                    $scheme,
                     $this->config->serverHost,
                     $this->config->serverPort
                 )
