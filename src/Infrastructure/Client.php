@@ -125,8 +125,12 @@ final readonly class Client
     {
         return new Connector([
             'tls' => [
-                'verify_peer'      => false,
-                'verify_peer_name' => false,
+                'local_cert'        => '/path/to/server.crt',
+                'local_pk'          => '/path/to/server.key',
+                'verify_peer'       => true,
+                'verify_peer_name'  => false,
+                'allow_self_signed' => true,
+                'cafile'            => '/data/mkcert/rootCA.pem',
             ],
         ])
             ->connect(
