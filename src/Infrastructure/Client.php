@@ -15,7 +15,6 @@ use PearTreeWebLtd\EventSourcererMessageUtilities\Model\MessageType;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Model\StreamId;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Model\WorkerId;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Service\CreateMessage;
-use React\EventLoop\Loop;
 use React\Promise\Deferred;
 use React\Promise\PromiseInterface;
 use React\Socket\ConnectionInterface;
@@ -278,12 +277,11 @@ final readonly class Client
     {
         $buffer = '';
         $eventQueue = [];
-        $streamEnded = false;
         $deferred = new Deferred();
 
         $this
             ->createConnection()
-            ->then(function (ConnectionInterface $connection) use ($streamId, &$eventQueue, &$buffer, &$deferred, &$streamEnded) {
+            ->then(function (ConnectionInterface $connection) use ($streamId, &$eventQueue, &$buffer, &$deferred) {
                 $connection->on('data', function (string $data) use (&$buffer, &$eventQueue) {
                     $buffer .= $data;
                     $parts = explode(MessageMarkup::NewEventParser->value, $buffer);
@@ -294,8 +292,7 @@ final readonly class Client
                     }
                 });
 
-                $connection->on('end', function () use (&$streamEnded, &$deferred) {
-                    $streamEnded = true;
+                $connection->on('end', function () use (&$deferred) {
                     $deferred->resolve(null);
                 });
 
@@ -309,19 +306,10 @@ final readonly class Client
             });
 
         // Process events as they arrive
-        while (!$streamEnded || !empty($eventQueue)) {
-            while (!empty($eventQueue)) {
-                yield array_shift($eventQueue);
-            }
+        await($deferred->promise());
 
-            // Give the event loop a chance to run
-            if (!$streamEnded) {
-                $tick = new Deferred();
-                Loop::futureTick(function() use ($tick) {
-                    $tick->resolve(null);
-                });
-                await($tick->promise());
-            }
+        while (!empty($eventQueue)) {
+            yield array_shift($eventQueue);
         }
     }
 
