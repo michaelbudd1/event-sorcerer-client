@@ -260,17 +260,38 @@ final readonly class Client
             return;
         }
 
-        /** must wait for promise to resolve or writing sequence could become distorted */
-        $connection = await(
-            $this->createConnection()->then(
-                null,
-                function (\Throwable $e) {
-                    throw new \RuntimeException('Could not connect to event sourcerer: ' . $e->getMessage(), 0, $e);
-                }
-            )
-        );
-        $connection->write($message);
-        $connection->end();
+        $scheme  = $this->config->createSecure ? 'tls' : 'tcp';
+        $address = sprintf('%s://%s:%d', $scheme, $this->config->serverHost, $this->config->serverPort);
+
+        $context = stream_context_create();
+
+        if ($this->config->createSecure) {
+            $certPath    = sprintf('%s/%s.pem', $this->config->localCertificateDirectory, $this->config->eventSourcererApplicationId);
+            $certKeyPath = sprintf('%s/%s-key.pem', $this->config->localCertificateDirectory, $this->config->eventSourcererApplicationId);
+
+            $tlsOptions = [
+                'local_cert'        => $certPath,
+                'local_pk'          => $certKeyPath,
+                'verify_peer'       => $this->config->verifyPeer,
+                'verify_peer_name'  => $this->config->verifyPeerName,
+                'allow_self_signed' => $this->config->allowSelfSigned,
+            ];
+
+            if (null !== $this->config->cafile) {
+                $tlsOptions['cafile'] = $this->config->cafile;
+            }
+
+            stream_context_set_option($context, ['ssl' => $tlsOptions]);
+        }
+
+        $socket = stream_socket_client($address, $errorCode, $errorMessage, 30, STREAM_CLIENT_CONNECT, $context);
+
+        if (false === $socket) {
+            throw new \RuntimeException('Could not connect to event sourcerer: ' . $errorMessage, $errorCode);
+        }
+
+        fwrite($socket, $message->toString());
+        fclose($socket);
     }
 
     public function readStream(StreamId $streamId): \Generator
