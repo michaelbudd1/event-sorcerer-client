@@ -16,7 +16,6 @@ final readonly class Config
         public string $eventSourcererApplicationId,
         public ?bool $createSecure = false,
         public ?string $localCertificateDirectory = null,
-        public ?string $localCertificateKeyDirectory = null,
         public ?bool $verifyPeer = false,
         public ?bool $verifyPeerName = false,
         public ?bool $allowSelfSigned = false,
