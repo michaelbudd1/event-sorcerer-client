@@ -312,12 +312,12 @@ final readonly class Client
     {
         $scheme  = $this->config->createSecure ? 'tls' : 'tcp';
         $address = sprintf('%s://%s:%d', $scheme, $this->config->serverHost, $this->config->serverPort);
-
         $context = stream_context_create();
 
         if ($this->config->createSecure) {
-            $certPath    = sprintf('%s/%s.pem', $this->config->localCertificateDirectory, $this->config->eventSourcererApplicationId);
+            $certPath = sprintf('%s/%s.pem', $this->config->localCertificateDirectory, $this->config->eventSourcererApplicationId);
             $certKeyPath = sprintf('%s/%s-key.pem', $this->config->localCertificateDirectory, $this->config->eventSourcererApplicationId);
+            $caPath = sprintf('%s/%s', $this->config->localCertificateDirectory, $this->config->cafile);
 
             $tlsOptions = [
                 'local_cert'        => $certPath,
@@ -328,7 +328,7 @@ final readonly class Client
             ];
 
             if (null !== $this->config->cafile) {
-                $tlsOptions['cafile'] = $this->config->cafile;
+                $tlsOptions['cafile'] = $caPath;
             }
 
             stream_context_set_option($context, ['ssl' => $tlsOptions]);
