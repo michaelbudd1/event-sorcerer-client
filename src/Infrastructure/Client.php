@@ -138,6 +138,7 @@ final readonly class Client
     {
         $certPath = sprintf('%s/%s.pem', $config->localCertificateDirectory, $config->eventSourcererApplicationId);
         $certKeyPath = sprintf('%s/%s-key.pem', $config->localCertificateDirectory, $config->eventSourcererApplicationId);
+        $caPath = sprintf('%s/%s', $config->localCertificateDirectory, $config->cafile);
 
         return new Connector([
             'tls' => [
@@ -146,7 +147,7 @@ final readonly class Client
                 'verify_peer'       => $config->verifyPeer,
                 'verify_peer_name'  => $config->verifyPeerName,
                 'allow_self_signed' => $config->allowSelfSigned,
-                'cafile'            => $config->cafile,
+                'cafile'            => $caPath,
             ],
         ]);
     }
