@@ -231,27 +231,11 @@ final readonly class Client
         fflush($localConnection);
     }
 
-    public function writeNewEvent(
-        StreamId $streamId,
-        EventName $eventName,
-        EventVersion $eventVersion,
-        array $payload,
-        ?int $expectedCurrentVersion = 0,
-    ): void {
-        $message = CreateMessage::forWriteNewEvent(
-            $streamId,
-            $eventName,
-            $eventVersion,
-            $payload,
-            $expectedCurrentVersion,
-        );
-
-        if (null !== $this->connection) {
-            $this->connection->write($message);
-
-            return;
-        }
-
+    /**
+     * @return resource
+     */
+    public function openSocket()
+    {
         $scheme  = $this->config->createSecure ? 'tls' : 'tcp';
         $address = sprintf('%s://%s:%d', $scheme, $this->config->serverHost, $this->config->serverPort);
 
@@ -282,8 +266,45 @@ final readonly class Client
             throw new \RuntimeException('Could not connect to event sourcerer: ' . $errorMessage, $errorCode);
         }
 
+        return $socket;
+    }
+
+    /**
+     * @param resource|null $socket An already-open socket to reuse, or null to open a new one.
+     */
+    public function writeNewEvent(
+        StreamId $streamId,
+        EventName $eventName,
+        EventVersion $eventVersion,
+        array $payload,
+        ?int $expectedCurrentVersion = 0,
+        $socket = null,
+    ): void {
+        $message = CreateMessage::forWriteNewEvent(
+            $streamId,
+            $eventName,
+            $eventVersion,
+            $payload,
+            $expectedCurrentVersion,
+        );
+
+        if (null !== $this->connection) {
+            $this->connection->write($message);
+
+            return;
+        }
+
+        $closeAfter = $socket === null;
+
+        if ($closeAfter) {
+            $socket = $this->openSocket();
+        }
+
         fwrite($socket, $message->toString());
-        fclose($socket);
+
+        if ($closeAfter) {
+            fclose($socket);
+        }
     }
 
     public function readStream(StreamId $streamId): \Generator
@@ -328,7 +349,7 @@ final readonly class Client
 
         stream_set_blocking($socket, false);
 
-        $idleTimeout  = 0.2;   // seconds of silence before we consider the stream done
+        $idleTimeout  = 0.05;  // seconds of silence before we consider the stream done
         $idleSince    = null;
 
         while (true) {

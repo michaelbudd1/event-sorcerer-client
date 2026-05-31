@@ -23,21 +23,31 @@ final readonly class SocketStreamRepository implements StreamRepository
 
     public function save(Stream $aggregate): void
     {
+        if (empty($aggregate->events)) {
+            return;
+        }
+
         $nextVersion = $aggregate->nextVersion - count($aggregate->events);
+        $socket      = $this->eventSourcererClient->openSocket();
 
-        foreach ($aggregate->events as $event) {
-            $nextVersion++;
+        try {
+            foreach ($aggregate->events as $event) {
+                $nextVersion++;
 
-            $payload = $event;
-            unset($payload['event']);
+                $payload = $event;
+                unset($payload['event']);
 
-            $this->eventSourcererClient->writeNewEvent(
-                $aggregate->id,
-                EventName::fromString($event['event']),
-                EventVersion::fromInt($event['version']),
-                $payload,
-                $nextVersion,
-            );
+                $this->eventSourcererClient->writeNewEvent(
+                    $aggregate->id,
+                    EventName::fromString($event['event']),
+                    EventVersion::fromInt($event['version']),
+                    $payload,
+                    $nextVersion,
+                    $socket,
+                );
+            }
+        } finally {
+            fclose($socket);
         }
     }
 }
