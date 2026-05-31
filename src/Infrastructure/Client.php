@@ -15,13 +15,10 @@ use PearTreeWebLtd\EventSourcererMessageUtilities\Model\MessageType;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Model\StreamId;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Model\WorkerId;
 use PearTreeWebLtd\EventSourcererMessageUtilities\Service\CreateMessage;
-use React\EventLoop\Loop;
-use React\Promise\Deferred;
 use React\Promise\PromiseInterface;
 use React\Socket\ConnectionInterface;
 use React\Socket\Connector;
 use React\Socket\UnixServer;
-use function React\Async\await;
 
 final readonly class Client
 {
@@ -255,61 +252,97 @@ final readonly class Client
             return;
         }
 
-        /** must wait for promise to resolve or writing sequence could become distorted */
-        $connection = await($this->createConnection());
-        $connection->write($message);
-        $connection->end();
+        $scheme  = $this->config->createSecure ? 'tls' : 'tcp';
+        $address = sprintf('%s://%s:%d', $scheme, $this->config->serverHost, $this->config->serverPort);
+
+        $context = stream_context_create();
+
+        if ($this->config->createSecure) {
+            $certPath    = sprintf('%s/%s.pem', $this->config->localCertificateDirectory, $this->config->eventSourcererApplicationId);
+            $certKeyPath = sprintf('%s/%s-key.pem', $this->config->localCertificateDirectory, $this->config->eventSourcererApplicationId);
+
+            $tlsOptions = [
+                'local_cert'        => $certPath,
+                'local_pk'          => $certKeyPath,
+                'verify_peer'       => $this->config->verifyPeer,
+                'verify_peer_name'  => $this->config->verifyPeerName,
+                'allow_self_signed' => $this->config->allowSelfSigned,
+            ];
+
+            if (null !== $this->config->cafile) {
+                $tlsOptions['cafile'] = $this->config->cafile;
+            }
+
+            stream_context_set_option($context, ['ssl' => $tlsOptions]);
+        }
+
+        $socket = stream_socket_client($address, $errorCode, $errorMessage, 30, STREAM_CLIENT_CONNECT, $context);
+
+        if (false === $socket) {
+            throw new \RuntimeException('Could not connect to event sourcerer: ' . $errorMessage, $errorCode);
+        }
+
+        fwrite($socket, $message->toString());
+        fclose($socket);
     }
 
     public function readStream(StreamId $streamId): \Generator
     {
-        $buffer = '';
-        $eventQueue = [];
-        $streamEnded = false;
-        $deferred = new Deferred();
+        $scheme  = $this->config->createSecure ? 'tls' : 'tcp';
+        $address = sprintf('%s://%s:%d', $scheme, $this->config->serverHost, $this->config->serverPort);
 
-        $this
-            ->createConnection()
-            ->then(function (ConnectionInterface $connection) use ($streamId, &$eventQueue, &$buffer, &$deferred, &$streamEnded) {
-                $connection->on('data', function (string $data) use (&$buffer, &$eventQueue) {
-                    $buffer .= $data;
-                    $parts = explode(MessageMarkup::NewEventParser->value, $buffer);
-                    $buffer = array_pop($parts);
+        $context = stream_context_create();
 
-                    foreach (array_filter($parts) as $event) {
-                        $eventQueue[] = self::decodeEvent($event);
-                    }
-                });
+        if ($this->config->createSecure) {
+            $certPath    = sprintf('%s/%s.pem', $this->config->localCertificateDirectory, $this->config->eventSourcererApplicationId);
+            $certKeyPath = sprintf('%s/%s-key.pem', $this->config->localCertificateDirectory, $this->config->eventSourcererApplicationId);
 
-                $connection->on('end', function () use (&$streamEnded, &$deferred) {
-                    $streamEnded = true;
-                    $deferred->resolve(null);
-                });
+            $tlsOptions = [
+                'local_cert'        => $certPath,
+                'local_pk'          => $certKeyPath,
+                'verify_peer'       => $this->config->verifyPeer,
+                'verify_peer_name'  => $this->config->verifyPeerName,
+                'allow_self_signed' => $this->config->allowSelfSigned,
+            ];
 
-                $connection->on('error', function (\Exception $e) use ($connection, &$deferred) {
-                    $deferred->reject($e->getMessage());
-                    $connection->close();
-                });
-
-                $applicationId = ApplicationId::fromString($this->config->eventSourcererApplicationId);
-                $connection->write(CreateMessage::forReadingStream($streamId, $applicationId));
-            });
-
-        // Process events as they arrive
-        while (!$streamEnded || !empty($eventQueue)) {
-            while (!empty($eventQueue)) {
-                yield array_shift($eventQueue);
+            if (null !== $this->config->cafile) {
+                $tlsOptions['cafile'] = $this->config->cafile;
             }
 
-            // Give the event loop a chance to run
-            if (!$streamEnded) {
-                $tick = new Deferred();
-                Loop::futureTick(function() use ($tick) {
-                    $tick->resolve(null);
-                });
-                await($tick->promise());
+            stream_context_set_option($context, ['ssl' => $tlsOptions]);
+        }
+
+        $socket = stream_socket_client($address, $errorCode, $errorMessage, 30, STREAM_CLIENT_CONNECT, $context);
+
+        if (false === $socket) {
+            throw new \RuntimeException('Could not connect to event sourcerer: ' . $errorMessage, $errorCode);
+        }
+
+        $applicationId = ApplicationId::fromString($this->config->eventSourcererApplicationId);
+        $message       = CreateMessage::forReadingStream($streamId, $applicationId);
+
+        fwrite($socket, $message->toString());
+
+        $buffer    = '';
+        $separator = MessageMarkup::NewEventParser->value;
+
+        while (!feof($socket)) {
+            $chunk = fread($socket, 8192);
+
+            if (false === $chunk || '' === $chunk) {
+                break;
+            }
+
+            $buffer .= $chunk;
+            $parts   = explode($separator, $buffer);
+            $buffer  = array_pop($parts);
+
+            foreach (array_filter($parts) as $event) {
+                yield self::decodeEvent($event);
             }
         }
+
+        fclose($socket);
     }
 
     private static function deleteSockFile(): void
