@@ -276,7 +276,7 @@ final readonly class Client
             stream_context_set_option($context, ['ssl' => $tlsOptions]);
         }
 
-        $socket = stream_socket_client($address, $errorCode, $errorMessage, 30, STREAM_CLIENT_CONNECT, $context);
+        $socket = stream_socket_client($address, $errorCode, $errorMessage, 5, STREAM_CLIENT_CONNECT, $context);
 
         if (false === $socket) {
             throw new \RuntimeException('Could not connect to event sourcerer: ' . $errorMessage, $errorCode);
@@ -312,7 +312,7 @@ final readonly class Client
             stream_context_set_option($context, ['ssl' => $tlsOptions]);
         }
 
-        $socket = stream_socket_client($address, $errorCode, $errorMessage, 30, STREAM_CLIENT_CONNECT, $context);
+        $socket = stream_socket_client($address, $errorCode, $errorMessage, 5, STREAM_CLIENT_CONNECT, $context);
 
         if (false === $socket) {
             throw new \RuntimeException('Could not connect to event sourcerer: ' . $errorMessage, $errorCode);
@@ -328,7 +328,7 @@ final readonly class Client
 
         stream_set_blocking($socket, false);
 
-        $idleTimeout  = 2;   // seconds of silence before we consider the stream done
+        $idleTimeout  = 0.2;   // seconds of silence before we consider the stream done
         $idleSince    = null;
 
         while (true) {
@@ -336,7 +336,7 @@ final readonly class Client
             $write  = null;
             $except = null;
 
-            $ready = stream_select($read, $write, $except, 1, 0);
+            $ready = stream_select($read, $write, $except, 0, 50000); // 50ms poll
 
             if ($ready === false) {
                 break;
