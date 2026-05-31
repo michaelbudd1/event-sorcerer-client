@@ -326,19 +326,46 @@ final readonly class Client
         $buffer    = '';
         $separator = MessageMarkup::NewEventParser->value;
 
-        while (!feof($socket)) {
-            $chunk = fread($socket, 8192);
+        stream_set_blocking($socket, false);
 
-            if (false === $chunk || '' === $chunk) {
+        $idleTimeout  = 2;   // seconds of silence before we consider the stream done
+        $idleSince    = null;
+
+        while (true) {
+            $read   = [$socket];
+            $write  = null;
+            $except = null;
+
+            $ready = stream_select($read, $write, $except, 1, 0);
+
+            if ($ready === false) {
                 break;
             }
 
-            $buffer .= $chunk;
-            $parts   = explode($separator, $buffer);
-            $buffer  = array_pop($parts);
+            if ($ready > 0) {
+                $chunk = fread($socket, 8192);
 
-            foreach (array_filter($parts) as $event) {
-                yield self::decodeEvent($event);
+                if (false === $chunk || ('' === $chunk && feof($socket))) {
+                    break;
+                }
+
+                if ('' !== $chunk) {
+                    $idleSince = null;
+                    $buffer   .= $chunk;
+                    $parts     = explode($separator, $buffer);
+                    $buffer    = array_pop($parts);
+
+                    foreach (array_filter($parts) as $event) {
+                        yield self::decodeEvent($event);
+                    }
+                }
+            } else {
+                // No data available
+                if ($idleSince === null) {
+                    $idleSince = microtime(true);
+                } elseif ((microtime(true) - $idleSince) >= $idleTimeout) {
+                    break;
+                }
             }
         }
 
