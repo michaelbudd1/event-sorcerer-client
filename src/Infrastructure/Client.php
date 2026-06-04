@@ -18,6 +18,8 @@ use PearTreeWebLtd\EventSourcererMessageUtilities\Service\CreateMessage;
 use React\Promise\PromiseInterface;
 use React\Socket\ConnectionInterface;
 use React\Socket\Connector;
+use React\Socket\ConnectorInterface;
+use React\Socket\SecureConnector;
 use React\Socket\UnixServer;
 
 final readonly class Client
@@ -134,14 +136,16 @@ final readonly class Client
             );
     }
 
-    private static function secureConnector(Config $config): Connector
+    private static function secureConnector(Config $config): SecureConnector
     {
         $certPath = sprintf('%s/%s.pem', $config->localCertificateDirectory, $config->eventSourcererApplicationId);
         $certKeyPath = sprintf('%s/%s-key.pem', $config->localCertificateDirectory, $config->eventSourcererApplicationId);
         $caPath = sprintf('%s/%s', $config->localCertificateDirectory, $config->cafile);
 
-        return new Connector([
-            'tls' => [
+        return new SecureConnector(
+            new Connector(),
+            null,
+            [
                 'local_cert'        => $certPath,
                 'local_pk'          => $certKeyPath,
                 'verify_peer'       => $config->verifyPeer,
@@ -149,7 +153,7 @@ final readonly class Client
                 'allow_self_signed' => $config->allowSelfSigned,
                 'cafile'            => $caPath,
             ],
-        ]);
+        );
     }
 
     public function connected(): bool
