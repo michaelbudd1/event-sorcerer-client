@@ -18,7 +18,6 @@ use PearTreeWebLtd\EventSourcererMessageUtilities\Service\CreateMessage;
 use React\Promise\PromiseInterface;
 use React\Socket\ConnectionInterface;
 use React\Socket\Connector;
-use React\Socket\ConnectorInterface;
 use React\Socket\SecureConnector;
 use React\Socket\UnixServer;
 
@@ -249,7 +248,6 @@ final readonly class Client
         if ($this->config->createSecure) {
             $certPath    = sprintf('%s/%s.pem', $this->config->localCertificateDirectory, $this->config->eventSourcererApplicationId);
             $certKeyPath = sprintf('%s/%s-key.pem', $this->config->localCertificateDirectory, $this->config->eventSourcererApplicationId);
-            $caPath      = sprintf('%s/%s', $this->config->localCertificateDirectory, $this->config->cafile);
 
             $tlsOptions = [
                 'local_cert'        => $certPath,
@@ -260,7 +258,7 @@ final readonly class Client
             ];
 
             if (null !== $this->config->cafile) {
-                $tlsOptions['cafile'] = $caPath;
+                $tlsOptions['cafile'] = sprintf('%s/%s', $this->config->localCertificateDirectory, $this->config->cafile);
             }
 
             stream_context_set_option($context, ['ssl' => $tlsOptions]);
@@ -315,35 +313,7 @@ final readonly class Client
 
     public function readStream(StreamId $streamId): \Generator
     {
-        $scheme  = $this->config->createSecure ? 'tls' : 'tcp';
-        $address = sprintf('%s://%s:%d', $scheme, $this->config->serverHost, $this->config->serverPort);
-        $context = stream_context_create();
-
-        if ($this->config->createSecure) {
-            $certPath = sprintf('%s/%s.pem', $this->config->localCertificateDirectory, $this->config->eventSourcererApplicationId);
-            $certKeyPath = sprintf('%s/%s-key.pem', $this->config->localCertificateDirectory, $this->config->eventSourcererApplicationId);
-            $caPath = sprintf('%s/%s', $this->config->localCertificateDirectory, $this->config->cafile);
-
-            $tlsOptions = [
-                'local_cert'        => $certPath,
-                'local_pk'          => $certKeyPath,
-                'verify_peer'       => $this->config->verifyPeer,
-                'verify_peer_name'  => $this->config->verifyPeerName,
-                'allow_self_signed' => $this->config->allowSelfSigned,
-            ];
-
-            if (null !== $this->config->cafile) {
-                $tlsOptions['cafile'] = $caPath;
-            }
-
-            stream_context_set_option($context, ['ssl' => $tlsOptions]);
-        }
-
-        $socket = stream_socket_client($address, $errorCode, $errorMessage, 5, STREAM_CLIENT_CONNECT, $context);
-
-        if (false === $socket) {
-            throw new \RuntimeException('Could not connect to event sourcerer: ' . $errorMessage, $errorCode);
-        }
+        $socket = $this->openSocket();
 
         $applicationId = ApplicationId::fromString($this->config->eventSourcererApplicationId);
         $message       = CreateMessage::forReadingStream($streamId, $applicationId);
