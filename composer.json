@@ -25,13 +25,13 @@
         "symfony/http-client": "8.0.*",
         "revolt/event-loop": "^1.0",
         "react/socket": "^1.17",
-        "eventsourcerer/message-utilities": "dev-main",
         "react/async": "^4.3.0",
         "psr/cache": "^3.0",
         "symfony/cache": "8.0.*",
         "symfony/lock": "8.0.*",
         "illuminate/collections": "^13",
-        "react/event-loop": "^1.6.0"
+        "react/event-loop": "^1.6.0",
+        "eventsourcerer/common": "dev-main"
     },
     "require-dev": {
         "phpunit/phpunit": "^12.5.8",

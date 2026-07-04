@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace PearTreeWeb\EventSourcerer\Client\Infrastructure\Repository;
 
-use PearTreeWeb\EventSourcerer\Client\Domain\Model\Stream;
-use PearTreeWeb\EventSourcerer\Client\Domain\Repository\StreamRepository;
 use PearTreeWeb\EventSourcerer\Client\Exception\CouldNotStoreEventException;
 use PearTreeWeb\EventSourcerer\Client\Infrastructure\Config;
-use PearTreeWebLtd\EventSourcererMessageUtilities\Model\Checkpoint;
-use PearTreeWebLtd\EventSourcererMessageUtilities\Model\StreamId;
+use PearTreeWeb\EventSourcerer\Common\Model\Checkpoint;
+use PearTreeWeb\EventSourcerer\Common\Model\Stream;
+use PearTreeWeb\EventSourcerer\Common\Model\StreamId;
+use PearTreeWeb\EventSourcerer\Common\Repository\StreamRepository;
 use Symfony\Component\HttpClient\Exception\ClientException;
 use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
@@ -51,17 +51,6 @@ final readonly class HttpStreamRepository implements StreamRepository
     public static function handleError(string $error, array $event): void
     {
         throw CouldNotStoreEventException::with($error, $event);
-    }
-
-    private static function keyPropertiesByName(array $events): array
-    {
-        $properties = [];
-
-        foreach ($events as $event) {
-            $properties[$event['event']] = $event;
-        }
-
-        return $properties;
     }
 
     private function saveEvent(Stream $aggregate, mixed $event): ResponseInterface

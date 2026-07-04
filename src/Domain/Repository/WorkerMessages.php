@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace PearTreeWeb\EventSourcerer\Client\Domain\Repository;
 
 
-use PearTreeWebLtd\EventSourcererMessageUtilities\Model\WorkerId;
+use PearTreeWeb\EventSourcerer\Common\Model\WorkerId;
 
 interface WorkerMessages
 {

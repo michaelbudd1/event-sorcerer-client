@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace PearTreeWeb\EventSourcerer\Client\Infrastructure;
 
-use PearTreeWebLtd\EventSourcererMessageUtilities\Model\ApplicationType;
+use PearTreeWeb\EventSourcerer\Common\Model\ApplicationType;
 
 final readonly class Config
 {

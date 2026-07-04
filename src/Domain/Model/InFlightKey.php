@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace PearTreeWeb\EventSourcerer\Client\Domain\Model;
 
-use PearTreeWebLtd\EventSourcererMessageUtilities\Model\ApplicationId;
-use PearTreeWebLtd\EventSourcererMessageUtilities\Model\StreamId;
+use PearTreeWeb\EventSourcerer\Common\Model\ApplicationId;
+use PearTreeWeb\EventSourcerer\Common\Model\StreamId;
 
 final readonly class InFlightKey
 {

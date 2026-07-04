@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace PearTreeWeb\EventSourcerer\Client\Infrastructure\Repository;
 
-use PearTreeWeb\EventSourcerer\Client\Domain\Model\Stream;
-use PearTreeWeb\EventSourcerer\Client\Domain\Repository\StreamRepository;
 use PearTreeWeb\EventSourcerer\Client\Infrastructure\Client;
-use PearTreeWebLtd\EventSourcererMessageUtilities\Model\Checkpoint;
-use PearTreeWebLtd\EventSourcererMessageUtilities\Model\EventName;
-use PearTreeWebLtd\EventSourcererMessageUtilities\Model\EventVersion;
-use PearTreeWebLtd\EventSourcererMessageUtilities\Model\StreamId;
+use PearTreeWeb\EventSourcerer\Common\Model\Checkpoint;
+use PearTreeWeb\EventSourcerer\Common\Model\EventName;
+use PearTreeWeb\EventSourcerer\Common\Model\EventVersion;
+use PearTreeWeb\EventSourcerer\Common\Model\Stream;
+use PearTreeWeb\EventSourcerer\Common\Model\StreamId;
+use PearTreeWeb\EventSourcerer\Common\Repository\StreamRepository;
 
 final readonly class SocketStreamRepository implements StreamRepository
 {
