@@ -264,9 +264,23 @@ final readonly class Client
             stream_context_set_option($context, ['ssl' => $tlsOptions]);
         }
 
-        $socket = stream_socket_client($address, $errorCode, $errorMessage, 5, STREAM_CLIENT_CONNECT, $context);
+        set_error_handler(function (int $errno, string $errstr) use (&$tlsError): bool {
+            if (str_contains($errstr, 'Failed to enable crypto') || str_contains($errstr, 'SSL')) {
+                $tlsError = $errstr;
+            }
+            return true;
+        });
+
+        $tlsError = null;
+        $socket   = stream_socket_client($address, $errorCode, $errorMessage, 5, STREAM_CLIENT_CONNECT, $context);
+
+        restore_error_handler();
 
         if (false === $socket) {
+            if ($tlsError !== null || str_contains($errorMessage, 'Failed to enable crypto') || str_contains($errorMessage, 'SSL')) {
+                throw new \RuntimeException('Could not establish a secure connection to the event sourcerer. Please check that your certificates are valid and that the server is reachable.', $errorCode);
+            }
+
             throw new \RuntimeException('Could not connect to event sourcerer: ' . $errorMessage, $errorCode);
         }
 
