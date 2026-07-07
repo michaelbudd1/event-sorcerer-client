@@ -261,7 +261,7 @@ final readonly class Client
                 $tlsOptions['cafile'] = sprintf('%s/%s', $this->config->localCertificateDirectory, $this->config->cafile);
             }
 
-            stream_context_set_option($context, ['ssl' => $tlsOptions]);
+            stream_context_set_options($context, ['ssl' => $tlsOptions]);
         }
 
         set_error_handler(function (int $errno, string $errstr) use (&$tlsError): bool {
